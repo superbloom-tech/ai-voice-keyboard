@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Logs
+*.log
+
+# Local config / secrets
+.env
+.env.*
+
+# Git worktrees (project-local)
+.worktrees/
+worktrees/
+

@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  swiftpm:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: SwiftPM tests (VoiceKeyboardCore)
+        working-directory: packages/VoiceKeyboardCore
+        run: swift test -c debug
+

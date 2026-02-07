@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a bug
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug!
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: App version / commit hash
+      placeholder: e.g. 0.1.0 / abc123
+  - type: input
+    id: os
+    attributes:
+      label: macOS version
+      placeholder: e.g. 14.4
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+
