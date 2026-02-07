@@ -14,9 +14,9 @@ Rules:
 
     let user = """
 Clean up the following dictated text:
-<<<
+<text>
 \(text)
->>>
+</text>
 """
 
     if let languageHint {
@@ -49,14 +49,14 @@ Rules:
 
     let user = """
 Instruction:
-<<<
+<instruction>
 \(instruction)
->>>
+</instruction>
 
 Selection:
-<<<
+<selection>
 \(selection)
->>>
+</selection>
 """
 
     if let languageHint {
@@ -72,4 +72,3 @@ Selection:
     ]
   }
 }
-
