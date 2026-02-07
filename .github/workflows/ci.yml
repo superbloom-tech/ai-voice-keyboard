@@ -14,3 +14,9 @@ jobs:
         working-directory: packages/VoiceKeyboardCore
         run: swift test -c debug
 
+  macos_app_build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build macOS app (AIVoiceKeyboard)
+        run: xcodebuild -project apps/macos/AIVoiceKeyboard/AIVoiceKeyboard.xcodeproj -scheme AIVoiceKeyboard -configuration Debug -sdk macosx -destination "platform=macOS" build
