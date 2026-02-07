@@ -7,12 +7,22 @@ import Foundation
 /// - Does NOT require Accessibility permission (we're not synthesizing input).
 /// - Registration can fail if another app already owns the hotkey.
 final class GlobalHotKeyCenter {
-  enum Action {
+  enum Action: Sendable {
     case toggleInsert
     case toggleEdit
+
+    var displayName: String {
+      switch self {
+      case .toggleInsert:
+        return "Insert"
+      case .toggleEdit:
+        return "Edit"
+      }
+    }
   }
 
   struct Binding: Sendable {
+    var id: UInt32
     var keyCode: UInt32
     var modifiers: UInt32
     var action: Action
@@ -26,26 +36,32 @@ final class GlobalHotKeyCenter {
       switch self {
       case .installHandlerFailed(let status):
         return "InstallEventHandler failed (\(status))."
-      case .registerFailed(_, let status) where status == OSStatus(eventHotKeyExistsErr):
-        return "Hotkey already in use (conflict with another app)."
+      case .registerFailed(let action, let status) where status == OSStatus(eventHotKeyExistsErr):
+        return "\(action.displayName) hotkey already in use (conflict with another app)."
       case .registerFailed(let action, let status):
-        return "RegisterEventHotKey failed for \(action) (\(status))."
+        return "RegisterEventHotKey failed for \(action.displayName) (\(status))."
       }
     }
   }
 
   // MARK: - Public
 
-  /// Called on the main thread when a hotkey fires.
-  var onAction: ((Action) -> Void)?
+  /// Called on the MainActor when a hotkey fires.
+  var onAction: (@MainActor (Action) -> Void)?
 
   func registerDefaultHotKeys() throws {
+    // Keep ids stable so adding/reordering hotkeys won't silently change behavior.
+    enum HotKeyID {
+      static let insert: UInt32 = 1
+      static let edit: UInt32 = 2
+    }
+
     // Default bindings:
     // - Insert: Option+Space
     // - Edit: Option+Shift+Space
     try registerHotKeys([
-      Binding(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey), action: .toggleInsert),
-      Binding(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey | shiftKey), action: .toggleEdit),
+      Binding(id: HotKeyID.insert, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey), action: .toggleInsert),
+      Binding(id: HotKeyID.edit, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey | shiftKey), action: .toggleEdit),
     ])
   }
 
@@ -56,6 +72,7 @@ final class GlobalHotKeyCenter {
       }
     }
     registeredHotKeyRefs.removeAll()
+    actionByID.removeAll()
 
     if let handler = eventHandler {
       RemoveEventHandler(handler)
@@ -69,6 +86,7 @@ final class GlobalHotKeyCenter {
 
   // MARK: - Private
 
+  // Keep this stable across versions; Carbon uses (signature,id) as the hotkey identity.
   private let signature: OSType = GlobalHotKeyCenter.fourCharCode("AVKB")
 
   private var eventHandler: EventHandlerRef?
@@ -93,8 +111,8 @@ final class GlobalHotKeyCenter {
         throw RegistrationError.installHandlerFailed(status)
       }
 
-      for (idx, binding) in bindings.enumerated() {
-        let id = UInt32(idx + 1)
+      for binding in bindings {
+        let id = binding.id
         actionByID[id] = binding.action
 
         let hotKeyID = EventHotKeyID(signature: signature, id: id)
@@ -122,7 +140,7 @@ final class GlobalHotKeyCenter {
 
   fileprivate func handleHotKeyEvent(id: UInt32) {
     guard let action = actionByID[id] else { return }
-    DispatchQueue.main.async { [weak self] in
+    Task { @MainActor [weak self] in
       self?.onAction?(action)
     }
   }
