@@ -26,21 +26,24 @@ struct SettingsView: View {
         kind: .microphone,
         status: permissions.statuses[.microphone] ?? .unknown,
         onRequest: { await permissions.request(.microphone) },
-        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .microphone) }
+        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .microphone) },
+        onRefresh: { permissions.refresh() }
       )
 
       PermissionRow(
         kind: .speechRecognition,
         status: permissions.statuses[.speechRecognition] ?? .unknown,
         onRequest: { await permissions.request(.speechRecognition) },
-        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .speechRecognition) }
+        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .speechRecognition) },
+        onRefresh: { permissions.refresh() }
       )
 
       PermissionRow(
         kind: .accessibility,
         status: permissions.statuses[.accessibility] ?? .unknown,
         onRequest: { await permissions.request(.accessibility) },
-        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .accessibility) }
+        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .accessibility) },
+        onRefresh: { permissions.refresh() }
       )
 
       Divider()
@@ -53,6 +56,10 @@ struct SettingsView: View {
       }
 
       Text("Tip: If a permission is denied, use “Open System Settings” to grant it, then click Refresh.")
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+
+      Text("Accessibility is a trust setting (not a one-tap permission). After enabling it in System Settings, return to this app and click Refresh. Some apps may require refocus or relaunch to take effect.")
         .font(.footnote)
         .foregroundStyle(.secondary)
     }
@@ -70,32 +77,57 @@ private struct PermissionRow: View {
 
   let onRequest: () async -> Void
   let onOpenSystemSettings: () -> Void
+  let onRefresh: () -> Void
 
   var body: some View {
     HStack(spacing: 12) {
       Text(kind.displayName)
         .frame(width: 160, alignment: .leading)
 
-      Text(status.displayText)
+      Text(statusText)
         .foregroundStyle(status.isSatisfied ? .green : .secondary)
         .frame(width: 140, alignment: .leading)
 
       Spacer()
 
-      if status == .notDetermined {
-        Button("Request") {
-          Task { await onRequest() }
+      if kind == .accessibility {
+        // Accessibility isn't a normal permission flow: it's a trust setting that usually requires
+        // manual enabling in System Settings and then returning to the app + refreshing.
+        if status.isSatisfied {
+          Text("OK")
+            .foregroundStyle(.secondary)
+        } else {
+          Button("Prompt") { Task { await onRequest() } }
+          Button("Open System Settings") { onOpenSystemSettings() }
         }
-      } else if status == .denied || status == .restricted {
-        Button("Open System Settings") {
-          onOpenSystemSettings()
-        }
-      } else if status == .authorized {
-        Text("OK")
-          .foregroundStyle(.secondary)
       } else {
-        Button("Request") { Task { await onRequest() } }
+        if status == .notDetermined {
+          Button("Request") {
+            Task { await onRequest() }
+          }
+        } else if status == .denied || status == .restricted {
+          Button("Open System Settings") {
+            onOpenSystemSettings()
+          }
+        } else if status == .authorized {
+          Text("OK")
+            .foregroundStyle(.secondary)
+        } else {
+          // For unknown/unsupported states, avoid calling request blindly.
+          Button("Refresh") { onRefresh() }
+          Button("Open System Settings") { onOpenSystemSettings() }
+        }
       }
     }
+  }
+
+  private var statusText: String {
+    if kind == .accessibility {
+      return status.isSatisfied ? "Trusted" : "Not Trusted"
+    }
+    if status == .unknown {
+      return "Unknown (Refresh)"
+    }
+    return status.displayText
   }
 }

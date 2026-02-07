@@ -188,14 +188,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    guard PermissionChecks.status(for: .microphone).isSatisfied else {
-      appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Open Settings…"
-      openSettings()
-      return
-    }
+    guard ensureMicrophonePermissionOrShowError() else { return }
 
-    appState.permissionWarningMessage = nil
     appState.status = .recordingInsert
   }
 
@@ -206,15 +200,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
+    guard ensureMicrophonePermissionOrShowError() else { return }
+
+    appState.status = .recordingEdit
+  }
+
+  private func ensureMicrophonePermissionOrShowError() -> Bool {
+    // Minimal gating (v0.1): we only require microphone permission to enter a "recording" state.
+    // - Speech Recognition will be required once Apple Speech STT is integrated.
+    // - Accessibility will be required for cross-app selection read/replace and some automation later.
     guard PermissionChecks.status(for: .microphone).isSatisfied else {
       appState.status = .error
       appState.permissionWarningMessage = "Microphone required. Open Settings…"
       openSettings()
-      return
+      return false
     }
 
     appState.permissionWarningMessage = nil
-    appState.status = .recordingEdit
+    return true
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {

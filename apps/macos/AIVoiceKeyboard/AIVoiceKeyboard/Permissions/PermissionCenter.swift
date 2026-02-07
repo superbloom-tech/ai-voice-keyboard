@@ -78,6 +78,7 @@ enum PermissionChecks {
       }
 
     case .accessibility:
+      // Accessibility is a trust setting (AXIsProcessTrusted), not a standard "notDetermined/denied" flow.
       return AXIsProcessTrusted() ? .authorized : .denied
     }
   }
@@ -89,7 +90,8 @@ enum PermissionChecks {
     case .speechRecognition:
       return await requestSpeechRecognition()
     case .accessibility:
-      // Prompts the user by opening System Settings to the right pane.
+      // Shows the system prompt. The user must still manually enable the app in System Settings.
+      // The trusted state often only flips after returning to the app and re-checking (Refresh).
       let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
       _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
       return status(for: .accessibility)
@@ -97,6 +99,7 @@ enum PermissionChecks {
   }
 
   static func openSystemSettings(for kind: PermissionKind) {
+    // `x-apple.systempreferences:` deep links are not a stable public API; keep this logic centralized.
     let urlString: String
     switch kind {
     case .microphone:
