@@ -3,7 +3,7 @@ import Combine
 
 @MainActor
 final class AppState: ObservableObject {
-  enum Status: String {
+  enum Status: String, CaseIterable {
     case idle
     case recordingInsert
     case recordingEdit
@@ -25,6 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var hotKeyInfoMenuItem: NSMenuItem?
   private var hotKeyErrorMenuItem: NSMenuItem?
   private var cancellables: Set<AnyCancellable> = []
+
+  private let showSettingsSelector = Selector(("showSettingsWindow:"))
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
@@ -56,43 +58,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     menu.addItem(.separator())
 
-    menu.addItem(NSMenuItem(
+    let toggleInsert = NSMenuItem(
       title: "Toggle Insert Recording",
       action: #selector(toggleInsertRecording),
       keyEquivalent: ""
-    ))
+    )
+    toggleInsert.target = self
+    menu.addItem(toggleInsert)
 
-    menu.addItem(NSMenuItem(
+    let toggleEdit = NSMenuItem(
       title: "Toggle Edit Recording",
       action: #selector(toggleEditRecording),
       keyEquivalent: ""
-    ))
+    )
+    toggleEdit.target = self
+    menu.addItem(toggleEdit)
 
     menu.addItem(.separator())
 
-    for status in AppState.Status.allCasesForMenu {
+    for status in AppState.Status.allCases {
       let item = NSMenuItem(
         title: "Set State: \(status.rawValue)",
         action: #selector(setStateFromMenu(_:)),
         keyEquivalent: ""
       )
       item.representedObject = status
+      item.target = self
       menu.addItem(item)
     }
 
     menu.addItem(.separator())
 
-    menu.addItem(NSMenuItem(
+    let settingsItem = NSMenuItem(
       title: "Open Settings…",
       action: #selector(openSettings),
       keyEquivalent: ","
-    ))
+    )
+    settingsItem.target = self
+    menu.addItem(settingsItem)
 
-    menu.addItem(NSMenuItem(
+    let quitItem = NSMenuItem(
       title: "Quit",
       action: #selector(quit),
       keyEquivalent: "q"
-    ))
+    )
+    quitItem.target = self
+    menu.addItem(quitItem)
 
     statusItem.menu = menu
 
@@ -161,7 +172,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   @objc private func openSettings() {
     NSApp.activate(ignoringOtherApps: true)
     // SwiftUI Settings scene can be opened via the standard settings action.
-    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+    // We use the responder-chain selector to avoid plumbing a custom settings window controller.
+    NSApp.sendAction(showSettingsSelector, to: nil, from: nil)
   }
 
   @objc private func quit() {
@@ -173,23 +185,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func updateStatusItemIcon(for status: AppState.Status) {
     guard let button = statusItem?.button else { return }
 
-    let symbolName: String
-    switch status {
-    case .idle:
-      symbolName = "mic"
-    case .recordingInsert:
-      symbolName = "mic.fill"
-    case .recordingEdit:
-      symbolName = "pencil.and.scribble"
-    case .processing:
-      symbolName = "sparkles"
-    case .preview:
-      symbolName = "doc.text.magnifyingglass"
-    case .error:
-      symbolName = "exclamationmark.triangle"
-    }
-
-    let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "AI Voice Keyboard")
+    let image = NSImage(
+      systemSymbolName: status.systemSymbolName,
+      accessibilityDescription: "AI Voice Keyboard"
+    )
     image?.isTemplate = true
     button.image = image
     button.toolTip = "AI Voice Keyboard (\(status.rawValue))"
@@ -197,7 +196,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension AppState.Status {
-  static var allCasesForMenu: [AppState.Status] {
-    [.idle, .recordingInsert, .recordingEdit, .processing, .preview, .error]
+  var systemSymbolName: String {
+    switch self {
+    case .idle:
+      return "mic"
+    case .recordingInsert:
+      return "mic.fill"
+    case .recordingEdit:
+      return "pencil.and.scribble"
+    case .processing:
+      return "sparkles"
+    case .preview:
+      return "doc.text.magnifyingglass"
+    case .error:
+      return "exclamationmark.triangle"
+    }
   }
 }
