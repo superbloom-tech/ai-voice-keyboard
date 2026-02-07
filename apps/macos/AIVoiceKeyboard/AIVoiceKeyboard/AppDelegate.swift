@@ -14,6 +14,7 @@ final class AppState: ObservableObject {
 
   @Published var status: Status = .idle
   @Published var hotKeyErrorMessage: String?
+  @Published var permissionWarningMessage: String?
 }
 
 @MainActor
@@ -24,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
   private var hotKeyErrorMenuItem: NSMenuItem?
+  private var permissionWarningMenuItem: NSMenuItem?
   private var cancellables: Set<AnyCancellable> = []
 
   private let showSettingsSelector = Selector(("showSettingsWindow:"))
@@ -55,6 +57,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     hotKeyError.isHidden = true
     menu.addItem(hotKeyError)
     self.hotKeyErrorMenuItem = hotKeyError
+
+    let permissionWarning = NSMenuItem(
+      title: "Permissions: -",
+      action: nil,
+      keyEquivalent: ""
+    )
+    permissionWarning.isEnabled = false
+    permissionWarning.isHidden = true
+    menu.addItem(permissionWarning)
+    self.permissionWarningMenuItem = permissionWarning
 
     menu.addItem(.separator())
 
@@ -148,6 +160,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
       }
       .store(in: &cancellables)
+
+    // Observe permission warnings and surface them in the menu.
+    appState.$permissionWarningMessage
+      .sink { [weak self] message in
+        guard let self else { return }
+        if let message {
+          self.permissionWarningMenuItem?.title = "Permissions: \(message)"
+          self.permissionWarningMenuItem?.isHidden = false
+        } else {
+          self.permissionWarningMenuItem?.isHidden = true
+        }
+      }
+      .store(in: &cancellables)
   }
 
   func applicationWillTerminate(_ notification: Notification) {
@@ -157,11 +182,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   // MARK: - Actions
 
   @objc private func toggleInsertRecording() {
-    appState.status = (appState.status == .recordingInsert) ? .idle : .recordingInsert
+    if appState.status == .recordingInsert {
+      appState.permissionWarningMessage = nil
+      appState.status = .idle
+      return
+    }
+
+    guard PermissionChecks.status(for: .microphone).isSatisfied else {
+      appState.status = .error
+      appState.permissionWarningMessage = "Microphone required. Open Settings…"
+      openSettings()
+      return
+    }
+
+    appState.permissionWarningMessage = nil
+    appState.status = .recordingInsert
   }
 
   @objc private func toggleEditRecording() {
-    appState.status = (appState.status == .recordingEdit) ? .idle : .recordingEdit
+    if appState.status == .recordingEdit {
+      appState.permissionWarningMessage = nil
+      appState.status = .idle
+      return
+    }
+
+    guard PermissionChecks.status(for: .microphone).isSatisfied else {
+      appState.status = .error
+      appState.permissionWarningMessage = "Microphone required. Open Settings…"
+      openSettings()
+      return
+    }
+
+    appState.permissionWarningMessage = nil
+    appState.status = .recordingEdit
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
@@ -213,4 +266,3 @@ extension AppState.Status {
     }
   }
 }
-
