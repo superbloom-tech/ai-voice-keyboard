@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -96,7 +96,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1540;
 			};
 			buildConfigurationList = 6785EA6EB7838C64508E10A6 /* Build configuration list for PBXProject "AIVoiceKeyboard" */;
 			compatibilityVersion = "Xcode 14.0";

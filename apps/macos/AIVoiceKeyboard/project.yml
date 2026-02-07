@@ -2,6 +2,8 @@ name: AIVoiceKeyboard
 
 options:
   bundleIdPrefix: tech.superbloom
+  # Keep Xcode project format compatible with GitHub Actions macOS runners (Xcode 15.x).
+  xcodeVersion: "15.4"
   deploymentTarget:
     macOS: "13.0"
 
@@ -30,4 +32,3 @@ schemes:
     build:
       targets:
         AIVoiceKeyboard: all
-
