@@ -10,12 +10,14 @@
 		2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990332E78C912D3698638D6F /* AppDelegate.swift */; };
 		2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */; };
 		6C142D85C9F2DA0FA268695F /* VoiceKeyboardCore in Frameworks */ = {isa = PBXBuildFile; productRef = CEDF3561FC64F9D674DD1CEE /* VoiceKeyboardCore */; };
+		F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2DD65E212905B6BB33840145 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		933EB4D8365EE1E0DB3742FE /* VoiceKeyboardCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = VoiceKeyboardCore; path = ../../../packages/VoiceKeyboardCore; sourceTree = SOURCE_ROOT; };
 		990332E78C912D3698638D6F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyCenter.swift; sourceTree = "<group>"; };
 		BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceKeyboardApp.swift; sourceTree = "<group>"; };
 		D3DF8CCEC1164DF60955772B /* AIVoiceKeyboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIVoiceKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -54,6 +56,7 @@
 			children = (
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
 				990332E78C912D3698638D6F /* AppDelegate.swift */,
+				9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
 				2DD65E212905B6BB33840145 /* Info.plist */,
 			);
 			path = AIVoiceKeyboard;
@@ -127,6 +130,7 @@
 			files = (
 				2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */,
 				2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */,
+				F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

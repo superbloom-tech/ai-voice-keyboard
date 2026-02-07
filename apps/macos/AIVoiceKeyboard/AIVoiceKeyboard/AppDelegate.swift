@@ -13,13 +13,17 @@ final class AppState: ObservableObject {
   }
 
   @Published var status: Status = .idle
+  @Published var hotKeyErrorMessage: String?
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appState = AppState()
+  private let hotKeyCenter = GlobalHotKeyCenter()
 
   private var statusItem: NSStatusItem?
+  private var hotKeyInfoMenuItem: NSMenuItem?
+  private var hotKeyErrorMenuItem: NSMenuItem?
   private var cancellables: Set<AnyCancellable> = []
 
   private let showSettingsSelector = Selector(("showSettingsWindow:"))
@@ -31,6 +35,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     self.statusItem = statusItem
 
     let menu = NSMenu()
+
+    // Hotkey info + warning section.
+    let hotKeyInfo = NSMenuItem(
+      title: "Hotkeys: ⌥Space (Insert), ⌥⇧Space (Edit)",
+      action: nil,
+      keyEquivalent: ""
+    )
+    hotKeyInfo.isEnabled = false
+    menu.addItem(hotKeyInfo)
+    self.hotKeyInfoMenuItem = hotKeyInfo
+
+    let hotKeyError = NSMenuItem(
+      title: "Hotkeys error: -",
+      action: nil,
+      keyEquivalent: ""
+    )
+    hotKeyError.isEnabled = false
+    hotKeyError.isHidden = true
+    menu.addItem(hotKeyError)
+    self.hotKeyErrorMenuItem = hotKeyError
+
+    menu.addItem(.separator())
 
     let toggleInsert = NSMenuItem(
       title: "Toggle Insert Recording",
@@ -84,12 +110,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Render initial icon.
     updateStatusItemIcon(for: appState.status)
 
+    // Register global hotkeys (works while other apps are focused).
+    hotKeyCenter.onAction = { [weak self] action in
+      guard let self else { return }
+      switch action {
+      case .toggleInsert:
+        self.toggleInsertRecording()
+      case .toggleEdit:
+        self.toggleEditRecording()
+      }
+    }
+
+    do {
+      try hotKeyCenter.registerDefaultHotKeys()
+    } catch {
+      appState.hotKeyErrorMessage = error.localizedDescription
+    }
+
     // Observe state changes.
     appState.$status
       .sink { [weak self] status in
         self?.updateStatusItemIcon(for: status)
       }
       .store(in: &cancellables)
+
+    // Observe hotkey errors (e.g. conflicts) and surface them in the menu.
+    appState.$hotKeyErrorMessage
+      .sink { [weak self] message in
+        guard let self else { return }
+        if let message {
+          self.hotKeyErrorMenuItem?.title = "Hotkeys error: \(message)"
+          self.hotKeyErrorMenuItem?.isHidden = false
+          self.hotKeyInfoMenuItem?.title = "Hotkeys: disabled (see error below)"
+        } else {
+          self.hotKeyErrorMenuItem?.isHidden = true
+          self.hotKeyInfoMenuItem?.title = "Hotkeys: ⌥Space (Insert), ⌥⇧Space (Edit)"
+        }
+      }
+      .store(in: &cancellables)
+  }
+
+  func applicationWillTerminate(_ notification: Notification) {
+    hotKeyCenter.unregisterAll()
   }
 
   // MARK: - Actions
@@ -151,3 +213,4 @@ extension AppState.Status {
     }
   }
 }
+
