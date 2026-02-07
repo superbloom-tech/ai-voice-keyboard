@@ -9,11 +9,25 @@ final class DisfluencyCleanerTests: XCTestCase {
     XCTAssertEqual(output, "I think this is good")
   }
 
+  func testEnglishFillerRemovalConsumesCommaWrappedFillers() throws {
+    let cleaner = DisfluencyCleaner()
+    let input = "I think, um, this is good"
+    let output = cleaner.clean(input, languageHint: .en)
+    XCTAssertEqual(output, "I think this is good")
+  }
+
   func testChineseLeadingFillerRemoval() throws {
     let cleaner = DisfluencyCleaner()
     let input = "嗯 我觉得这个可以"
     let output = cleaner.clean(input, languageHint: .zh)
     XCTAssertEqual(output, "我觉得这个可以")
+  }
+
+  func testChineseFillerRemovalConsumesTrailingPunctuation() throws {
+    let cleaner = DisfluencyCleaner()
+    let input = "我觉得，嗯，这个可以"
+    let output = cleaner.clean(input, languageHint: .zh)
+    XCTAssertEqual(output, "我觉得，这个可以")
   }
 
   func testWordRepetitionCompressionEnglish() throws {
@@ -37,4 +51,3 @@ final class DisfluencyCleanerTests: XCTestCase {
     XCTAssertEqual(output, "看看这个")
   }
 }
-

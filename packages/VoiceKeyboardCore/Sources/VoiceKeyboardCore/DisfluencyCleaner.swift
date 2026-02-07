@@ -30,8 +30,9 @@ public struct DisfluencyCleaner: Sendable {
       // Remove standalone English fillers.
       // Example: "um I think uh this" -> "I think this"
       s = s.replacingOccurrences(
-        of: #"(?i)\b(um+|uh+|erm+|er+|ah+|hmm+)\b\s*"#,
-        with: "",
+        // Also consume punctuation directly adjacent to fillers to avoid ", ," artifacts.
+        of: #"(?i)(?:\s*[,;:.!?-]\s*)?\b(um+|uh+|erm+|er+|ah+|hmm+)\b(?:\s*[,;:.!?-]\s*)?"#,
+        with: " ",
         options: .regularExpression
       )
     }
@@ -43,6 +44,14 @@ public struct DisfluencyCleaner: Sendable {
       s = s.replacingOccurrences(
         of: #"^(嗯+|啊+|呃+|额+|诶+|唉+|em+)\s*"#,
         with: "",
+        options: [.regularExpression, .caseInsensitive]
+      )
+
+      // Consume punctuation following the hesitation token, keeping only the leading punctuation.
+      // Example: "我觉得，嗯，这个" -> "我觉得，这个"
+      s = s.replacingOccurrences(
+        of: #"([，。！？、,!.?])\s*(嗯+|啊+|呃+|额+|诶+|唉+|em+)\s*([，。！？、,!.?])\s*"#,
+        with: "$1",
         options: [.regularExpression, .caseInsensitive]
       )
 

@@ -22,7 +22,9 @@ Package.resolved
 .env
 .env.*
 
+# Local agent/editor configs
+.claude/
+
 # Git worktrees (project-local)
 .worktrees/
 worktrees/
-
