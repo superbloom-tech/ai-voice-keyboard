@@ -1,0 +1,33 @@
+name: AIVoiceKeyboard
+
+options:
+  bundleIdPrefix: tech.superbloom
+  deploymentTarget:
+    macOS: "13.0"
+
+packages:
+  VoiceKeyboardCore:
+    path: ../../../packages/VoiceKeyboardCore
+
+targets:
+  AIVoiceKeyboard:
+    type: application
+    platform: macOS
+    sources:
+      - path: AIVoiceKeyboard
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: tech.superbloom.aivoicekeyboard
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        INFOPLIST_FILE: AIVoiceKeyboard/Info.plist
+        CODE_SIGNING_ALLOWED: NO
+    dependencies:
+      - package: VoiceKeyboardCore
+
+schemes:
+  AIVoiceKeyboard:
+    build:
+      targets:
+        AIVoiceKeyboard: all
+
