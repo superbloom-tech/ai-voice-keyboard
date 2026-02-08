@@ -23,14 +23,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let hotKeyCenter = GlobalHotKeyCenter()
   private var recordingHUD: RecordingHUDController?
   private var isRequestingMicrophonePermission = false
+  private let settingsWindowController = SettingsWindowController()
 
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
   private var hotKeyErrorMenuItem: NSMenuItem?
   private var permissionWarningMenuItem: NSMenuItem?
   private var cancellables: Set<AnyCancellable> = []
-
-  private let showSettingsSelector = Selector(("showSettingsWindow:"))
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
@@ -262,10 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @objc private func openSettings() {
-    NSApp.activate(ignoringOtherApps: true)
-    // SwiftUI Settings scene can be opened via the standard settings action.
-    // We use the responder-chain selector to avoid plumbing a custom settings window controller.
-    NSApp.sendAction(showSettingsSelector, to: nil, from: nil)
+    settingsWindowController.show()
   }
 
   @objc private func quit() {
