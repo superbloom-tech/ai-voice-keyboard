@@ -1,23 +1,39 @@
 import Foundation
 
+public struct STTTranscriptStream: Sendable {
+  public let transcripts: AsyncThrowingStream<Transcript, Error>
+
+  private let cancelImpl: @Sendable () async -> Void
+
+  public init(
+    transcripts: AsyncThrowingStream<Transcript, Error>,
+    cancel: @escaping @Sendable () async -> Void
+  ) {
+    self.transcripts = transcripts
+    self.cancelImpl = cancel
+  }
+
+  public func cancel() async {
+    await cancelImpl()
+  }
+}
+
 public protocol STTEngine: Sendable {
   var id: String { get }
   var displayName: String { get }
 
   func capabilities() async -> STTCapabilities
 
-  /// Begin streaming transcription.
+  /// Stream transcription updates.
   ///
-  /// - Important: Callers must ensure `stopStreaming()` is eventually called (typically in a `defer`)
-  ///   to allow implementations to release audio / recognition resources. Cancellation does not
-  ///   implicitly stop the engine.
+  /// - Returns: A stream of `Transcript` values and an explicit cancellation handle.
   ///
-  /// Implementations should invoke `onPartial` frequently with partial updates.
-  func startStreaming(
-    locale: Locale,
-    onPartial: @escaping @Sendable (Transcript) -> Void
-  ) async throws
-
-  /// Stop streaming transcription and return a final transcript.
-  func stopStreaming() async throws -> Transcript
+  /// Cancellation + lifecycle contract:
+  /// - Implementations MUST release underlying audio/recognition resources when either:
+  ///   - the consumer cancels the Task iterating `transcripts`, OR
+  ///   - the consumer stops iterating and the stream terminates (`AsyncThrowingStream` termination), OR
+  ///   - `cancel()` is called.
+  /// - The stream should yield partial updates frequently (`isFinal == false`) and eventually yield a
+  ///   final transcript (`isFinal == true`) before finishing normally.
+  func streamTranscripts(locale: Locale) async throws -> STTTranscriptStream
 }
