@@ -80,7 +80,8 @@ final class RecordingHUDController {
     guard let visibleFrame = screen?.visibleFrame else { return }
 
     let frame = panel.frame
-    let margin: CGFloat = 12
+    // `visibleFrame.maxY` is already below the menu bar, so keep this small to sit closer to the menu bar.
+    let margin: CGFloat = 4
 
     // Top-center of visible screen.
     let x = visibleFrame.midX - (frame.width / 2)
@@ -145,4 +146,3 @@ private struct RecordingHUDView: View {
     return String(format: "%02d:%02d", minutes, remainder)
   }
 }
-
