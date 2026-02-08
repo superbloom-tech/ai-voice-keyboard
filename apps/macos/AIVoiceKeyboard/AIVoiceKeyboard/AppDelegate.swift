@@ -540,8 +540,15 @@ final class HistoryStore: ObservableObject {
         try FileManager.default.removeItem(at: url)
       }
     } catch {
-      // If we can't delete the file, fall back to overwriting it with an empty array (when enabled).
-      saveToDiskBestEffort()
+      // If deletion fails, fall back to overwriting the file with an empty array.
+      // This must work even when persistenceEnabled == false.
+      do {
+        let url = try historyFileURL(createDirs: true)
+        let data = try JSONEncoder().encode([HistoryEntry]())
+        try data.write(to: url, options: [.atomic])
+      } catch {
+        // Ignore: best-effort only.
+      }
     }
   }
 
