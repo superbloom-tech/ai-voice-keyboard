@@ -105,9 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let settingsItem = NSMenuItem(
       title: "Open Settings…",
       action: #selector(openSettings),
-      // Avoid Cmd+, which macOS treats as the standard "Settings…" shortcut and may route through
-      // the SwiftUI Settings scene machinery (which can log warnings for accessory apps).
-      keyEquivalent: ""
+      keyEquivalent: ","
     )
     settingsItem.target = self
     menu.addItem(settingsItem)
@@ -280,19 +278,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     print("[AIVoiceKeyboard] openSettings activationPolicy=\(NSApp.activationPolicy().rawValue) isActive=\(NSApp.isActive)")
 #endif
     settingsWindowController.show()
-  }
-
-  // MARK: - Standard Settings actions
-
-  /// Handle the standard macOS "Settings…" menu action (Cmd+,) if it is routed to the responder chain.
-  /// This makes it work even when other frameworks try to open a Settings scene.
-  @objc func showSettingsWindow(_ sender: Any?) {
-    openSettings()
-  }
-
-  /// Older naming used by some apps/frameworks.
-  @objc func showPreferencesWindow(_ sender: Any?) {
-    openSettings()
   }
 
   @objc private func quit() {
