@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990332E78C912D3698638D6F /* AppDelegate.swift */; };
 		2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */; };
+		415B540733F1127F38CA86AA /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */; };
 		6C142D85C9F2DA0FA268695F /* VoiceKeyboardCore in Frameworks */ = {isa = PBXBuildFile; productRef = CEDF3561FC64F9D674DD1CEE /* VoiceKeyboardCore */; };
 		B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */; };
 		F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */; };
@@ -21,6 +22,7 @@
 		9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyCenter.swift; sourceTree = "<group>"; };
 		ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenter.swift; sourceTree = "<group>"; };
 		BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceKeyboardApp.swift; sourceTree = "<group>"; };
+		C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
 		D3DF8CCEC1164DF60955772B /* AIVoiceKeyboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIVoiceKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -59,10 +61,19 @@
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
 				990332E78C912D3698638D6F /* AppDelegate.swift */,
 				9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
+				A242B953C6C2A2E6AB973870 /* HUD */,
 				2DD65E212905B6BB33840145 /* Info.plist */,
 				C25764340DAE45347B4DC680 /* Permissions */,
 			);
 			path = AIVoiceKeyboard;
+			sourceTree = "<group>";
+		};
+		A242B953C6C2A2E6AB973870 /* HUD */ = {
+			isa = PBXGroup;
+			children = (
+				C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */,
+			);
+			path = HUD;
 			sourceTree = "<group>";
 		};
 		C25764340DAE45347B4DC680 /* Permissions */ = {
@@ -141,6 +152,7 @@
 			files = (
 				2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */,
 				2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */,
+				415B540733F1127F38CA86AA /* RecordingHUDController.swift in Sources */,
 				F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */,
 				B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */,
 			);
