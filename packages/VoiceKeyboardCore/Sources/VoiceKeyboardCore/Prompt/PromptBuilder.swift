@@ -41,8 +41,10 @@ Selection:
   }
 
   private static func systemPromptForRefineDictation(languageHint: LanguageHint?) -> String {
+    let base: String
+
     if languageHint == .zh {
-      return """
+      base = """
 你是一个语音口述清理引擎。
 
 规则：
@@ -53,9 +55,8 @@ Selection:
 - 保持原语言，不要翻译。
 - 只输出清理后的文本；只输出最终文本；不要引号、不要 markdown、不要解释。
 """
-    }
-
-    return """
+    } else {
+      base = """
 You are a voice dictation cleanup engine.
 
 Rules:
@@ -66,22 +67,33 @@ Rules:
 - Keep the original language(s); do not translate.
 - Output only the cleaned text. Output only the final text, no quotes, no markdown, no explanations.
 """
+    }
+
+    // Keep backward-compatible language hint metadata when provided.
+    if let languageHint {
+      return base + "\n\nLanguage hint: \(languageHint.rawValue)"
+    }
+
+    return base
   }
 
   private static func systemPromptForEditSelection(languageHint: LanguageHint?) -> String {
+    let base: String
+
     if languageHint == .zh {
-      return """
-你是一个编辑引擎：只根据用户指令重写“给定选中内容”。
+      base = """
+你是一个编辑引擎：只根据用户指令修改“给定选中内容”。
 
 规则：
-- 严格按照指令修改，并且只改写选中内容。
-- 不要添加无关内容。
+- 严格按照指令修改，并且只修改选中内容；不要输出选区之外的任何内容。
+- 尽量保持原意与表达风格；除非指令要求，不要润色或大幅改写。
+- 不要添加任何新信息。
+- 保持原语言，不要翻译。
 - 不要输出解释。
-- 只输出改写后的选中内容文本。
+- 只输出修改后的选中内容文本。
 """
-    }
-
-    return """
+    } else {
+      base = """
 You are an editing engine that rewrites ONLY the provided selection according to the user's instruction.
 
 Rules:
@@ -90,5 +102,13 @@ Rules:
 - Do not output explanations.
 - Output only the revised selection text.
 """
+    }
+
+    // Keep backward-compatible language hint metadata when provided.
+    if let languageHint {
+      return base + "\n\nLanguage hint: \(languageHint.rawValue)"
+    }
+
+    return base
   }
 }
