@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
   private var recordingHUD: RecordingHUDController?
+  private var isRequestingMicrophonePermission = false
 
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
@@ -122,6 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Render initial icon.
     updateStatusItemIcon(for: appState.status)
+    updateStatusItemTooltip()
 
     // Set up a non-activating always-on-top HUD for recording states.
     recordingHUD = RecordingHUDController()
@@ -149,6 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let self else { return }
         self.updateStatusItemIcon(for: status)
         self.recordingHUD?.update(for: status)
+        self.updateStatusItemTooltip()
       }
       .store(in: &cancellables)
 
@@ -164,6 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           self.hotKeyErrorMenuItem?.isHidden = true
           self.hotKeyInfoMenuItem?.title = "Hotkeys: ⌥Space (Insert), ⌥⇧Space (Edit)"
         }
+        self.updateStatusItemTooltip()
       }
       .store(in: &cancellables)
 
@@ -177,6 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
           self.permissionWarningMenuItem?.isHidden = true
         }
+        self.updateStatusItemTooltip()
       }
       .store(in: &cancellables)
   }
@@ -194,9 +199,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    guard ensureMicrophonePermissionOrShowError() else { return }
-
-    appState.status = .recordingInsert
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      guard await self.ensureMicrophonePermissionOrShowError() else { return }
+      self.appState.status = .recordingInsert
+    }
   }
 
   @objc private func toggleEditRecording() {
@@ -206,24 +213,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    guard ensureMicrophonePermissionOrShowError() else { return }
-
-    appState.status = .recordingEdit
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      guard await self.ensureMicrophonePermissionOrShowError() else { return }
+      self.appState.status = .recordingEdit
+    }
   }
 
-  private func ensureMicrophonePermissionOrShowError() -> Bool {
+  private func ensureMicrophonePermissionOrShowError() async -> Bool {
     // Minimal gating (v0.1): we only require microphone permission to enter a "recording" state.
     // - Speech Recognition will be required once Apple Speech STT is integrated.
     // - Accessibility will be required for cross-app selection read/replace and some automation later.
-    guard PermissionChecks.status(for: .microphone).isSatisfied else {
-      appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Open Settings…"
-      openSettings()
-      return false
+    let status = PermissionChecks.status(for: .microphone)
+    if status.isSatisfied {
+      appState.permissionWarningMessage = nil
+      return true
     }
 
-    appState.permissionWarningMessage = nil
-    return true
+    // If this is the first time, trigger the macOS permission prompt.
+    if status == .notDetermined {
+      if isRequestingMicrophonePermission {
+        appState.permissionWarningMessage = "Microphone permission prompt is already open."
+        return false
+      }
+
+      isRequestingMicrophonePermission = true
+      appState.permissionWarningMessage = "Microphone permission required. Please approve the macOS prompt…"
+      let requested = await PermissionChecks.request(.microphone)
+      isRequestingMicrophonePermission = false
+
+      if requested.isSatisfied {
+        appState.permissionWarningMessage = nil
+        return true
+      }
+    }
+
+    // If denied/restricted (or user dismissed/denied the prompt), macOS won't show the prompt again.
+    appState.status = .error
+    appState.permissionWarningMessage = "Microphone required. Enable it in System Settings…"
+    openSettings()
+    PermissionChecks.openSystemSettings(for: .microphone)
+    return false
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
@@ -253,7 +283,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     image?.isTemplate = true
     button.image = image
-    button.toolTip = "AI Voice Keyboard (\(status.rawValue))"
+  }
+
+  private func updateStatusItemTooltip() {
+    guard let button = statusItem?.button else { return }
+
+    var lines: [String] = ["AI Voice Keyboard (\(appState.status.rawValue))"]
+
+    if let message = appState.permissionWarningMessage {
+      lines.append("Permissions: \(message)")
+    }
+
+    if let message = appState.hotKeyErrorMessage {
+      lines.append("Hotkeys error: \(message)")
+    }
+
+    button.toolTip = lines.joined(separator: "\n")
   }
 }
 
