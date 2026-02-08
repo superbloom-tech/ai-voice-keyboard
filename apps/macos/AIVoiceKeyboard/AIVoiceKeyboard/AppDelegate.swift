@@ -22,6 +22,7 @@ final class AppState: ObservableObject {
 final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
+  private var recordingHUD: RecordingHUDController?
 
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
@@ -123,6 +124,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Render initial icon.
     updateStatusItemIcon(for: appState.status)
 
+    // Set up a non-activating always-on-top HUD for recording states.
+    recordingHUD = RecordingHUDController()
+
     // Register global hotkeys (works while other apps are focused).
     hotKeyCenter.onAction = { [weak self] action in
       guard let self else { return }
@@ -143,7 +147,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Observe state changes.
     appState.$status
       .sink { [weak self] status in
-        self?.updateStatusItemIcon(for: status)
+        guard let self else { return }
+        self.updateStatusItemIcon(for: status)
+        self.recordingHUD?.update(for: status)
       }
       .store(in: &cancellables)
 
