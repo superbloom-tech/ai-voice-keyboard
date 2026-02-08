@@ -31,6 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private let historyStore: HistoryStore
 
+  // Insert-only v0.1: Apple Speech STT + paste inserter.
+  private let textInserter: TextInserter = PasteTextInserter()
+  private var transcriber: SpeechTranscriber?
+  private var isInsertRecordingArmed: Bool = false
+
   override init() {
     let enabled = UserDefaults.standard.bool(forKey: SettingsKeys.persistHistoryEnabled)
     self.historyStore = HistoryStore(maxEntries: 30, persistenceEnabled: enabled)
@@ -54,6 +59,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
+
+    do {
+      transcriber = try SpeechTranscriber()
+    } catch {
+      // If speech recognizer can't be created, Insert/Edit will surface errors at runtime.
+      transcriber = nil
+    }
 
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.statusItem = statusItem
@@ -267,16 +279,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   // MARK: - Actions
 
   @objc private func toggleInsertRecording() {
+    // Stop: finalize STT and insert.
     if appState.status == .recordingInsert {
-      appendPlaceholderHistoryFromClipboard(mode: .insert)
       appState.permissionWarningMessage = nil
-      appState.status = .idle
+      appState.status = .processing
+
+      Task { [weak self] in
+        guard let self else { return }
+        do {
+          let text = try await self.stopInsertTranscription()
+          let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+          if !trimmed.isEmpty {
+            try self.textInserter.insert(text: trimmed)
+            self.historyStore.append(mode: .insert, text: trimmed)
+          }
+          self.appState.status = .idle
+        } catch {
+          self.appState.status = .error
+          self.appState.permissionWarningMessage = error.localizedDescription
+        }
+      }
       return
     }
 
-    Task {
-      await ensureMicrophonePermissionOrShowError { [weak self] in
-        self?.appState.status = .recordingInsert
+    // Start: request permissions, then begin streaming transcription.
+    Task { [weak self] in
+      guard let self else { return }
+      await self.ensureInsertPermissionsOrShowError { [weak self] in
+        guard let self else { return }
+        do {
+          try self.startInsertTranscription()
+          self.appState.status = .recordingInsert
+        } catch {
+          self.appState.status = .error
+          self.appState.permissionWarningMessage = error.localizedDescription
+        }
       }
     }
   }
@@ -296,40 +333,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
-  private func ensureMicrophonePermissionOrShowError(onSuccess: @escaping () -> Void) async {
-    // Minimal gating (v0.1): we only require microphone permission to enter a "recording" state.
-    // - Speech Recognition will be required once Apple Speech STT is integrated.
-    // - Accessibility will be required for cross-app selection read/replace and some automation later.
-    let currentStatus = PermissionChecks.status(for: .microphone)
+  private func ensureInsertPermissionsOrShowError(onSuccess: @escaping () -> Void) async {
+    // Insert-only v0.1 requires:
+    // - Microphone permission for recording.
+    // - Speech Recognition permission for Apple Speech STT.
+    let micStatus = PermissionChecks.status(for: .microphone)
+    if micStatus == .notDetermined {
+      _ = await PermissionChecks.request(.microphone)
+    }
 
-    switch currentStatus {
-    case .authorized:
-      // Permission already granted, proceed
-      appState.permissionWarningMessage = nil
-      onSuccess()
+    let speechStatus = PermissionChecks.status(for: .speechRecognition)
+    if speechStatus == .notDetermined {
+      _ = await PermissionChecks.request(.speechRecognition)
+    }
 
-    case .notDetermined:
-      // Request permission
-      let newStatus = await PermissionChecks.request(.microphone)
-      if newStatus.isSatisfied {
-        appState.permissionWarningMessage = nil
-        onSuccess()
-      } else {
-        appState.status = .error
-        appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
-      }
+    let nextMic = PermissionChecks.status(for: .microphone)
+    let nextSpeech = PermissionChecks.status(for: .speechRecognition)
 
-    case .denied, .restricted, .unknown:
-      // Permission denied or restricted, show error
+    guard nextMic.isSatisfied else {
       appState.status = .error
       appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      return
     }
+
+    guard nextSpeech.isSatisfied else {
+      appState.status = .error
+      appState.permissionWarningMessage = "Speech Recognition required. Use “Open Settings…” from the menu bar."
+      return
+    }
+
+    appState.permissionWarningMessage = nil
+    onSuccess()
   }
 
   private func appendPlaceholderHistoryFromClipboard(mode: HistoryMode) {
 #if DEBUG
-    // Placeholder wiring (no STT yet): treat current clipboard text as the "recognized" output.
-    // This allows end-to-end History verification before the real pipeline lands.
+    // Kept for debugging history without running STT.
     let pb = NSPasteboard.general
     guard let s = pb.string(forType: .string) else { return }
     let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -341,6 +380,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
     _ = mode
 #endif
+  }
+
+  private func startInsertTranscription() throws {
+    guard let transcriber else {
+      throw NSError(domain: "AIVoiceKeyboard", code: 1, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
+    }
+    try transcriber.start()
+    isInsertRecordingArmed = true
+  }
+
+  private func stopInsertTranscription() async throws -> String {
+    guard let transcriber, isInsertRecordingArmed else {
+      throw NSError(domain: "AIVoiceKeyboard", code: 2, userInfo: [NSLocalizedDescriptionKey: "Not recording"])
+    }
+
+    isInsertRecordingArmed = false
+    let text = try await transcriber.stop(timeoutSeconds: 2.0)
+    return text
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
