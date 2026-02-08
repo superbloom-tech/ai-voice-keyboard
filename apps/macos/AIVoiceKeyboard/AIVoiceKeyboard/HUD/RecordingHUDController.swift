@@ -80,11 +80,11 @@ final class RecordingHUDController {
     guard let visibleFrame = screen?.visibleFrame else { return }
 
     let frame = panel.frame
-    // `visibleFrame.maxY` is already below the menu bar, so keep this small to sit closer to the menu bar.
-    let margin: CGFloat = 4
+    let margin: CGFloat = -4
+    let xOffset: CGFloat = -24
 
     // Top-center of visible screen.
-    let x = visibleFrame.midX - (frame.width / 2)
+    let x = visibleFrame.midX - (frame.width / 2) + xOffset
     let y = visibleFrame.maxY - frame.height - margin
 
     panel.setFrameOrigin(NSPoint(x: x, y: y))
