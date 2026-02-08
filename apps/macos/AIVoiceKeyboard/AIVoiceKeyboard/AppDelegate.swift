@@ -105,10 +105,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let settingsItem = NSMenuItem(
       title: "Open Settings…",
       action: #selector(openSettings),
-      // Avoid Cmd+, which macOS treats as the standard "Settings…" shortcut and may route through
-      // the SwiftUI Settings scene machinery (which can log warnings for accessory apps).
-      keyEquivalent: ""
+      // Capture Cmd+, ourselves so it triggers our settings-opening logic (and doesn't go through
+      // deprecated Settings selectors that only emit warnings on newer macOS versions).
+      keyEquivalent: ","
     )
+    settingsItem.keyEquivalentModifierMask = [.command]
     settingsItem.target = self
     menu.addItem(settingsItem)
 
