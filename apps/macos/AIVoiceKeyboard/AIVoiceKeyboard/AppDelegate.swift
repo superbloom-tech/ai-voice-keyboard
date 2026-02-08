@@ -320,9 +320,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func restoreClipboard(_ sender: NSMenuItem) {
     guard let snap = lastClipboardSnapshot else { return }
-    snap.restore(to: .general)
-    lastClipboardSnapshot = nil
-    rebuildHistoryMenu()
+
+    // Only clear the snapshot if we successfully restore; otherwise keep it so the user can retry.
+    if snap.restore(to: .general) {
+      lastClipboardSnapshot = nil
+      rebuildHistoryMenu()
+    } else {
+      NSSound.beep()
+    }
   }
 
   @objc private func clearHistory(_ sender: NSMenuItem) {
@@ -361,7 +366,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(addSample)
 #endif
 
-    let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistory(_:)), keyEquivalent: "")
+    let clear = NSMenuItem(title: "Clear History (Delete Local File)", action: #selector(clearHistory(_:)), keyEquivalent: "")
     clear.target = self
     clear.isEnabled = !historyStore.entries.isEmpty
     menu.addItem(clear)
@@ -474,7 +479,17 @@ final class HistoryStore: ObservableObject {
 
   func clear() {
     entries.removeAll()
-    saveToDiskBestEffort()
+
+    // Best-effort: prefer deleting the file so a "clear" doesn't leave stale data behind.
+    do {
+      let url = try historyFileURL()
+      if FileManager.default.fileExists(atPath: url.path) {
+        try FileManager.default.removeItem(at: url)
+      }
+    } catch {
+      // If we can't delete the file, fall back to overwriting it with an empty array.
+      saveToDiskBestEffort()
+    }
   }
 
   private func loadFromDisk() {
@@ -553,11 +568,12 @@ struct PasteboardSnapshot: Sendable {
     return PasteboardSnapshot(items: items)
   }
 
-  func restore(to pasteboard: NSPasteboard) {
+  @discardableResult
+  func restore(to pasteboard: NSPasteboard) -> Bool {
     pasteboard.clearContents()
 
     if items.isEmpty {
-      return
+      return true
     }
 
     let pbItems: [NSPasteboardItem] = items.map { snap in
@@ -571,6 +587,6 @@ struct PasteboardSnapshot: Sendable {
       return item
     }
 
-    _ = pasteboard.writeObjects(pbItems)
+    return pasteboard.writeObjects(pbItems)
   }
 }
