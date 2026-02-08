@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let hotKeyCenter = GlobalHotKeyCenter()
   private var recordingHUD: RecordingHUDController?
   private var isRequestingMicrophonePermission = false
-  private let settingsWindowController = SettingsWindowController()
+  private let legacySettingsWindowController = SettingsWindowController()
 
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
@@ -252,7 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
       let requested = await PermissionChecks.request(.microphone)
       isRequestingMicrophonePermission = false
-      if previousPolicy != .regular, settingsWindowController.isShowing == false {
+      if previousPolicy != .regular {
         NSApp.setActivationPolicy(previousPolicy)
       }
 
@@ -277,9 +277,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func openSettings() {
 #if DEBUG
-    print("[AIVoiceKeyboard] openSettings activationPolicy=\(NSApp.activationPolicy().rawValue) isActive=\(NSApp.isActive)")
+    NSLog("[AIVoiceKeyboard] openSettings activationPolicy=%ld isActive=%d", NSApp.activationPolicy().rawValue, NSApp.isActive)
 #endif
-    settingsWindowController.show()
+    if #available(macOS 14.0, *) {
+      NotificationCenter.default.post(name: .avkOpenSettingsRequest, object: nil)
+    } else {
+      legacySettingsWindowController.show()
+    }
   }
 
   // MARK: - Standard Settings actions
