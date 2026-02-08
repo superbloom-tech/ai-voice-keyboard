@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import SwiftUI
 
 @MainActor
 final class AppState: ObservableObject {
@@ -28,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var permissionWarningMenuItem: NSMenuItem?
   private var cancellables: Set<AnyCancellable> = []
 
-  private let showSettingsSelector = Selector(("showSettingsWindow:"))
+  private lazy var settingsWindowController = SettingsWindowController()
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
@@ -188,9 +189,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    guard ensureMicrophonePermissionOrShowError() else { return }
-
-    appState.status = .recordingInsert
+    Task {
+      await ensureMicrophonePermissionOrShowError { [weak self] in
+        self?.appState.status = .recordingInsert
+      }
+    }
   }
 
   @objc private func toggleEditRecording() {
@@ -200,24 +203,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    guard ensureMicrophonePermissionOrShowError() else { return }
-
-    appState.status = .recordingEdit
+    Task {
+      await ensureMicrophonePermissionOrShowError { [weak self] in
+        self?.appState.status = .recordingEdit
+      }
+    }
   }
 
-  private func ensureMicrophonePermissionOrShowError() -> Bool {
+  private func ensureMicrophonePermissionOrShowError(onSuccess: @escaping () -> Void) async {
     // Minimal gating (v0.1): we only require microphone permission to enter a "recording" state.
     // - Speech Recognition will be required once Apple Speech STT is integrated.
     // - Accessibility will be required for cross-app selection read/replace and some automation later.
-    guard PermissionChecks.status(for: .microphone).isSatisfied else {
+    let currentStatus = PermissionChecks.status(for: .microphone)
+
+    switch currentStatus {
+    case .authorized:
+      // Permission already granted, proceed
+      appState.permissionWarningMessage = nil
+      onSuccess()
+
+    case .notDetermined:
+      // Request permission
+      let newStatus = await PermissionChecks.request(.microphone)
+      if newStatus.isSatisfied {
+        appState.permissionWarningMessage = nil
+        onSuccess()
+      } else {
+        appState.status = .error
+        appState.permissionWarningMessage = "Microphone required. Open Settings…"
+        openSettings()
+      }
+
+    case .denied, .restricted, .unknown:
+      // Permission denied or restricted, show error
       appState.status = .error
       appState.permissionWarningMessage = "Microphone required. Open Settings…"
       openSettings()
-      return false
     }
-
-    appState.permissionWarningMessage = nil
-    return true
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
@@ -226,10 +248,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @objc private func openSettings() {
-    NSApp.activate(ignoringOtherApps: true)
-    // SwiftUI Settings scene can be opened via the standard settings action.
-    // We use the responder-chain selector to avoid plumbing a custom settings window controller.
-    NSApp.sendAction(showSettingsSelector, to: nil, from: nil)
+    settingsWindowController.show()
   }
 
   @objc private func quit() {
@@ -267,5 +286,63 @@ extension AppState.Status {
     case .error:
       return "exclamationmark.triangle"
     }
+  }
+}
+
+// MARK: - Settings Window Controller
+
+@MainActor
+final class SettingsWindowController {
+  private var window: NSWindow?
+
+  func show() {
+    // If window already exists, just bring it to front
+    if let existingWindow = window, existingWindow.isVisible {
+      existingWindow.makeKeyAndOrderFront(nil)
+      NSApp.activate(ignoringOtherApps: true)
+      return
+    }
+
+    // Store the original activation policy
+    let originalPolicy = NSApp.activationPolicy()
+
+    // Switch to regular app to show the window properly
+    NSApp.setActivationPolicy(.regular)
+    NSApp.activate(ignoringOtherApps: true)
+
+    // Create the settings window
+    let settingsView = SettingsView()
+    let hostingController = NSHostingController(rootView: settingsView)
+
+    let window = NSWindow(contentViewController: hostingController)
+    window.title = "Settings"
+    window.styleMask = [.titled, .closable]
+    window.center()
+    window.isReleasedWhenClosed = false
+
+    // Switch back to accessory when window closes
+    window.delegate = SettingsWindowDelegate(
+      onClose: { [weak self] in
+        self?.window = nil
+        if originalPolicy == .accessory {
+          NSApp.setActivationPolicy(.accessory)
+        }
+      }
+    )
+
+    self.window = window
+    window.makeKeyAndOrderFront(nil as Any?)
+  }
+}
+
+private class SettingsWindowDelegate: NSObject, NSWindowDelegate {
+  private let onClose: () -> Void
+
+  init(onClose: @escaping () -> Void) {
+    self.onClose = onClose
+  }
+
+  func windowWillClose(_ notification: Notification) {
+    onClose()
   }
 }

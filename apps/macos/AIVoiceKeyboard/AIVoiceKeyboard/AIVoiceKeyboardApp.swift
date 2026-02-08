@@ -5,8 +5,13 @@ struct AIVoiceKeyboardApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
   var body: some Scene {
-    Settings {
-      SettingsView()
+    // Settings window is now managed by SettingsWindowController in AppDelegate
+    // to properly handle .accessory activation policy
+    WindowGroup {
+      EmptyView()
+    }
+    .commands {
+      CommandGroup(replacing: .newItem) { }
     }
   }
 }
