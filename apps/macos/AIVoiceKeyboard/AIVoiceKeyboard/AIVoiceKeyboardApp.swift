@@ -1,82 +1,13 @@
 import SwiftUI
 
-extension Notification.Name {
-  static let avkOpenSettingsRequest = Notification.Name("avk.openSettingsRequest")
-  static let avkSettingsWindowClosed = Notification.Name("avk.settingsWindowClosed")
-}
-
 @main
 struct AIVoiceKeyboardApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
   var body: some Scene {
-    // Hidden window provides a SwiftUI environment context for `openSettings`.
-    // This is required for menu bar / accessory apps where calling Settings selectors is deprecated
-    // and `openSettings()` can otherwise fail silently.
-    Window("Hidden", id: "HiddenWindow") {
-      if #available(macOS 14.0, *) {
-        HiddenSettingsOpenerView14()
-      } else {
-        HiddenSettingsOpenerViewLegacy()
-      }
-    }
-    .windowResizability(.contentSize)
-    .defaultSize(width: 1, height: 1)
-
     Settings {
       SettingsView()
-        .onDisappear {
-          NotificationCenter.default.post(name: .avkSettingsWindowClosed, object: nil)
-        }
     }
-  }
-}
-
-@available(macOS 14.0, *)
-private struct HiddenSettingsOpenerView14: View {
-  @Environment(\.openSettings) private var openSettings
-
-  var body: some View {
-    Color.clear
-      .frame(width: 1, height: 1)
-      .onAppear {
-#if DEBUG
-        NSLog("[AIVoiceKeyboard] HiddenSettingsOpenerView14 onAppear")
-#endif
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .avkOpenSettingsRequest)) { _ in
-        Task { @MainActor in
-          // Make sure we temporarily behave like a regular app so Settings can appear frontmost.
-          NSApp.setActivationPolicy(.regular)
-          try? await Task.sleep(for: .milliseconds(120))
-
-          NSApp.activate(ignoringOtherApps: true)
-          openSettings()
-
-          // Best-effort: bring the Settings window to the front once created.
-          try? await Task.sleep(for: .milliseconds(220))
-          if let settingsWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "com.apple.SwiftUI.Settings" }) {
-            settingsWindow.makeKeyAndOrderFront(nil)
-            settingsWindow.orderFrontRegardless()
-          }
-        }
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .avkSettingsWindowClosed)) { _ in
-        // Restore menu bar app state when Settings closes.
-        NSApp.setActivationPolicy(.accessory)
-      }
-  }
-}
-
-private struct HiddenSettingsOpenerViewLegacy: View {
-  var body: some View {
-    Color.clear
-      .frame(width: 1, height: 1)
-      .onAppear {
-#if DEBUG
-        NSLog("[AIVoiceKeyboard] HiddenSettingsOpenerViewLegacy onAppear")
-#endif
-      }
   }
 }
 
