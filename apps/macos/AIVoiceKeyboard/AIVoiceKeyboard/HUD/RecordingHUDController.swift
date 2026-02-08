@@ -80,12 +80,15 @@ final class RecordingHUDController {
     guard let visibleFrame = screen?.visibleFrame else { return }
 
     let frame = panel.frame
-    let margin: CGFloat = -4
+    // `visibleFrame.maxY` is already below the menu bar. If we want the HUD to visually "attach"
+    // to the menu bar, we can allow it to overlap upward by a few points.
+    let menuBarOverlap: CGFloat = 4
+    let gapBelowMenuBar: CGFloat = 0
     let xOffset: CGFloat = -24
 
     // Top-center of visible screen.
     let x = visibleFrame.midX - (frame.width / 2) + xOffset
-    let y = visibleFrame.maxY - frame.height - margin
+    let y = visibleFrame.maxY - frame.height + menuBarOverlap - gapBelowMenuBar
 
     panel.setFrameOrigin(NSPoint(x: x, y: y))
   }
