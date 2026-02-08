@@ -558,6 +558,9 @@ private class SettingsWindowDelegate: NSObject, NSWindowDelegate {
 
   func windowWillClose(_ notification: Notification) {
     onClose()
+  }
+}
+
 // MARK: - History + Clipboard
 
 enum HistoryMode: String, Codable, Sendable {
