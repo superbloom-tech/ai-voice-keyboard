@@ -23,7 +23,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
 
-  private let historyStore = HistoryStore(maxEntries: 30)
+  private let historyStore: HistoryStore
+
+  override init() {
+    let enabled = UserDefaults.standard.bool(forKey: SettingsKeys.persistHistoryEnabled)
+    self.historyStore = HistoryStore(maxEntries: 30, persistenceEnabled: enabled)
+    super.init()
+  }
 
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
@@ -219,6 +225,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
       .store(in: &cancellables)
 
+    NotificationCenter.default
+      .publisher(for: UserDefaults.didChangeNotification, object: UserDefaults.standard)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        guard let self else { return }
+        let enabled = UserDefaults.standard.bool(forKey: SettingsKeys.persistHistoryEnabled)
+        self.historyStore.setPersistenceEnabled(enabled)
+      }
+      .store(in: &cancellables)
+
+    NotificationCenter.default
+      .publisher(for: .avkbHistoryDeletePersistedFile)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.historyStore.deletePersistedFileBestEffort()
+      }
+      .store(in: &cancellables)
+
     rebuildHistoryMenu()
   }
 
@@ -366,7 +390,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(addSample)
 #endif
 
-    let clear = NSMenuItem(title: "Clear History (Delete Local File)", action: #selector(clearHistory(_:)), keyEquivalent: "")
+    let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistory(_:)), keyEquivalent: "")
     clear.target = self
     clear.isEnabled = !historyStore.entries.isEmpty
     menu.addItem(clear)
@@ -462,10 +486,32 @@ final class HistoryStore: ObservableObject {
   @Published private(set) var entries: [HistoryEntry] = []
 
   private let maxEntries: Int
+  private var persistenceEnabled: Bool
 
-  init(maxEntries: Int) {
+  init(maxEntries: Int, persistenceEnabled: Bool) {
     self.maxEntries = maxEntries
-    loadFromDisk()
+    self.persistenceEnabled = persistenceEnabled
+
+    if persistenceEnabled {
+      entries = loadEntriesFromDiskBestEffort()
+    }
+  }
+
+  func setPersistenceEnabled(_ enabled: Bool) {
+    guard enabled != persistenceEnabled else { return }
+    persistenceEnabled = enabled
+
+    if enabled {
+      // When enabling, merge any previously persisted entries with the current in-memory session.
+      let disk = loadEntriesFromDiskBestEffort()
+      if !disk.isEmpty {
+        entries = (entries + disk)
+        if entries.count > maxEntries {
+          entries.removeLast(entries.count - maxEntries)
+        }
+      }
+      saveToDiskBestEffort()
+    }
   }
 
   func append(mode: HistoryMode, text: String) {
@@ -479,32 +525,37 @@ final class HistoryStore: ObservableObject {
 
   func clear() {
     entries.removeAll()
+    deletePersistedFileBestEffort()
+  }
 
-    // Best-effort: prefer deleting the file so a "clear" doesn't leave stale data behind.
+  func deletePersistedFileBestEffort() {
+    // Best-effort: remove the on-disk file if it exists (even when persistence is off).
     do {
       let url = try historyFileURL()
       if FileManager.default.fileExists(atPath: url.path) {
         try FileManager.default.removeItem(at: url)
       }
     } catch {
-      // If we can't delete the file, fall back to overwriting it with an empty array.
+      // If we can't delete the file, fall back to overwriting it with an empty array (when enabled).
       saveToDiskBestEffort()
     }
   }
 
-  private func loadFromDisk() {
+  private func loadEntriesFromDiskBestEffort() -> [HistoryEntry] {
     do {
       let url = try historyFileURL()
-      guard FileManager.default.fileExists(atPath: url.path) else { return }
+      guard FileManager.default.fileExists(atPath: url.path) else { return [] }
       let data = try Data(contentsOf: url)
-      entries = try JSONDecoder().decode([HistoryEntry].self, from: data)
+      return try JSONDecoder().decode([HistoryEntry].self, from: data)
     } catch {
       // Best-effort only: never block the app on history IO.
-      entries = []
+      return []
     }
   }
 
   private func saveToDiskBestEffort() {
+    guard persistenceEnabled else { return }
+
     do {
       let url = try historyFileURL(createDirs: true)
       let data = try JSONEncoder().encode(entries)
@@ -539,6 +590,8 @@ struct HistoryNotifications {
 extension Notification.Name {
   static let avkbHistoryAppendInsert = Notification.Name("avkb.history.append.insert")
   static let avkbHistoryAppendEdit = Notification.Name("avkb.history.append.edit")
+
+  static let avkbHistoryDeletePersistedFile = Notification.Name("avkb.history.persist.deleteFile")
 }
 
 struct PasteboardSnapshot: Sendable {

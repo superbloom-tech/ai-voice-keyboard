@@ -14,6 +14,24 @@ struct AIVoiceKeyboardApp: App {
 struct SettingsView: View {
   @StateObject private var permissions = PermissionCenter()
 
+  @AppStorage(SettingsKeys.persistHistoryEnabled) private var persistHistoryEnabled: Bool = false
+
+  @State private var showDisablePersistAlert = false
+
+  private var persistHistoryBinding: Binding<Bool> {
+    Binding(
+      get: { persistHistoryEnabled },
+      set: { newValue in
+        if newValue {
+          persistHistoryEnabled = true
+        } else {
+          // Confirm whether the on-disk file should be deleted when turning persistence off.
+          showDisablePersistAlert = true
+        }
+      }
+    )
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("AI Voice Keyboard")
@@ -48,6 +66,17 @@ struct SettingsView: View {
 
       Divider()
 
+      Text("History")
+        .font(.headline)
+
+      Toggle("Persist History to Disk", isOn: persistHistoryBinding)
+
+      Text("Off (default): history stays in memory and is cleared on restart. On: history is saved to disk and persists across restarts.")
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+
+      Divider()
+
       HStack {
         Button("Refresh") {
           permissions.refresh()
@@ -64,9 +93,21 @@ struct SettingsView: View {
         .foregroundStyle(.secondary)
     }
     .padding(20)
-    .frame(width: 520, height: 320)
+    .frame(width: 520, height: 400)
     .onAppear {
       permissions.refresh()
+    }
+    .alert("Turn Off Persistence?", isPresented: $showDisablePersistAlert) {
+      Button("Cancel", role: .cancel) {}
+      Button("Turn Off (Keep File)") {
+        persistHistoryEnabled = false
+      }
+      Button("Turn Off (Delete File)", role: .destructive) {
+        persistHistoryEnabled = false
+        NotificationCenter.default.post(name: .avkbHistoryDeletePersistedFile, object: nil)
+      }
+    } message: {
+      Text("Turning off persistence keeps history in memory for this session, but it will not be restored after restart. You can also delete the saved history file now.")
     }
   }
 }
