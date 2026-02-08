@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Dispatch
 
 @MainActor
 final class AppState: ObservableObject {
@@ -188,24 +189,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       .store(in: &cancellables)
 
     historyStore.$entries
+      .receive(on: DispatchQueue.main)
       .sink { [weak self] _ in
         self?.rebuildHistoryMenu()
       }
       .store(in: &cancellables)
 
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(onAppendInsertHistoryNotification(_:)),
-      name: .avkbHistoryAppendInsert,
-      object: nil
-    )
+    // Notifications may be posted from background threads (e.g. future STT/LLM pipeline),
+    // so we hop to main before touching AppKit UI or MainActor state.
+    NotificationCenter.default
+      .publisher(for: .avkbHistoryAppendInsert)
+      .compactMap { $0.userInfo?[HistoryNotifications.textKey] as? String }
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] text in
+        self?.historyStore.append(mode: .insert, text: text)
+      }
+      .store(in: &cancellables)
 
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(onAppendEditHistoryNotification(_:)),
-      name: .avkbHistoryAppendEdit,
-      object: nil
-    )
+    NotificationCenter.default
+      .publisher(for: .avkbHistoryAppendEdit)
+      .compactMap { $0.userInfo?[HistoryNotifications.textKey] as? String }
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] text in
+        self?.historyStore.append(mode: .edit, text: text)
+      }
+      .store(in: &cancellables)
 
     rebuildHistoryMenu()
   }
@@ -317,19 +329,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     historyStore.clear()
   }
 
-  @objc private func onAppendInsertHistoryNotification(_ note: Notification) {
-    guard let text = note.userInfo?[HistoryNotifications.textKey] as? String else { return }
-    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return }
-    historyStore.append(mode: .insert, text: trimmed)
-  }
-
-  @objc private func onAppendEditHistoryNotification(_ note: Notification) {
-    guard let text = note.userInfo?[HistoryNotifications.textKey] as? String else { return }
-    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return }
-    historyStore.append(mode: .edit, text: trimmed)
-  }
+  // History append notifications are handled via Combine publishers in applicationDidFinishLaunching
+  // to ensure main-thread delivery for AppKit / @MainActor safety.
 
 #if DEBUG
   @objc private func addSampleHistoryEntry(_ sender: NSMenuItem) {
@@ -345,7 +346,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     if let _ = lastClipboardSnapshot {
       let restore = NSMenuItem(
-        title: "Restore Clipboard",
+        title: "Restore Original Clipboard",
         action: #selector(restoreClipboard(_:)),
         keyEquivalent: ""
       )
