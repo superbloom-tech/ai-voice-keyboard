@@ -14,7 +14,7 @@ struct AIVoiceKeyboardApp: App {
 struct SettingsView: View {
   @StateObject private var permissions = PermissionCenter()
 
-  @AppStorage(SettingsKeys.persistHistoryEnabled) private var persistHistoryEnabled: Bool = false
+  @AppStorage("avkb.persistHistoryEnabled") private var persistHistoryEnabled: Bool = false
 
   @State private var showDisablePersistAlert = false
 

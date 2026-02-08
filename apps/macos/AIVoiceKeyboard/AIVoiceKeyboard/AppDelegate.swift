@@ -20,6 +20,10 @@ final class AppState: ObservableObject {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+  private enum SettingsKeys {
+    static let persistHistoryEnabled = "avkb.persistHistoryEnabled"
+  }
+
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
 
