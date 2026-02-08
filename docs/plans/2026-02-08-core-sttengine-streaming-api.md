@@ -30,9 +30,12 @@ Implementations MUST release audio/recognition resources when any of the followi
 - the consumer stops iterating and the stream terminates
 - `cancel()` is called
 
+Implementations MUST treat cancellation as safe and idempotent (it may be triggered via multiple paths).
+
 Stream behavior expectations:
 - yield partial updates frequently with `isFinal == false`
-- eventually yield a final transcript with `isFinal == true` before finishing normally
+- yield a final transcript with `isFinal == true` before finishing normally *when possible*
+- on cancellation or errors, a final transcript may not be available
 
 ## Migration Notes
 Old (callback-based):
