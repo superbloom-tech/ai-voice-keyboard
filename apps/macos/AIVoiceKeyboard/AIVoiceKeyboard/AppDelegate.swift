@@ -224,6 +224,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // - Speech Recognition will be required once Apple Speech STT is integrated.
     // - Accessibility will be required for cross-app selection read/replace and some automation later.
     let status = PermissionChecks.status(for: .microphone)
+#if DEBUG
+    print("[AIVoiceKeyboard] mic status=\(status.rawValue) activationPolicy=\(NSApp.activationPolicy().rawValue) isActive=\(NSApp.isActive)")
+#endif
     if status.isSatisfied {
       appState.permissionWarningMessage = nil
       return true
@@ -238,9 +241,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
       isRequestingMicrophonePermission = true
       appState.permissionWarningMessage = "Microphone permission required. Please approve the macOS prompt…"
-      NSApp.activate(ignoringOtherApps: true)
+      // Accessory (menu bar) apps can fail to present permission prompts unless they temporarily behave
+      // like a regular app (frontmost, with activation policy `.regular`).
+      let previousPolicy = NSApp.activationPolicy()
+      if previousPolicy != .regular {
+        NSApp.setActivationPolicy(.regular)
+      }
+      NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
       let requested = await PermissionChecks.request(.microphone)
       isRequestingMicrophonePermission = false
+      if previousPolicy != .regular, settingsWindowController.isShowing == false {
+        NSApp.setActivationPolicy(previousPolicy)
+      }
 
       if requested.isSatisfied {
         appState.permissionWarningMessage = nil
@@ -262,6 +274,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @objc private func openSettings() {
+#if DEBUG
+    print("[AIVoiceKeyboard] openSettings activationPolicy=\(NSApp.activationPolicy().rawValue) isActive=\(NSApp.isActive)")
+#endif
     settingsWindowController.show()
   }
 

@@ -100,28 +100,65 @@ enum PermissionChecks {
 
   static func openSystemSettings(for kind: PermissionKind) {
     // `x-apple.systempreferences:` deep links are not a stable public API; keep this logic centralized.
-    let urlString: String
+    // Some macOS versions reject specific panes; try a small set of candidates then fallback to opening
+    // System Settings itself.
+    let candidates: [String]
     switch kind {
     case .microphone:
-      urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+      candidates = [
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Microphone",
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+      ]
     case .speechRecognition:
-      urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
+      candidates = [
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition",
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_SpeechRecognition",
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+      ]
     case .accessibility:
-      urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+      candidates = [
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility",
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+      ]
     }
 
-    if let url = URL(string: urlString) {
-      NSWorkspace.shared.open(url)
-    } else {
-      // Fallback: open System Settings root.
-      NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: "/System/Applications/System Settings.app"), configuration: .init())
+    for urlString in candidates {
+      if let url = URL(string: urlString) {
+#if DEBUG
+        print("[AIVoiceKeyboard] openSystemSettings try \(urlString)")
+#endif
+        if NSWorkspace.shared.open(url) {
+#if DEBUG
+          print("[AIVoiceKeyboard] openSystemSettings opened \(urlString)")
+#endif
+          return
+        }
+#if DEBUG
+        print("[AIVoiceKeyboard] openSystemSettings failed \(urlString)")
+#endif
+      }
     }
+
+#if DEBUG
+    print("[AIVoiceKeyboard] openSystemSettings fallback open System Settings.app")
+#endif
+    // Fallback: open System Settings root.
+    NSWorkspace.shared.openApplication(
+      at: URL(fileURLWithPath: "/System/Applications/System Settings.app"),
+      configuration: .init()
+    )
   }
 
   private static func requestMicrophone() async -> PermissionStatus {
     await withCheckedContinuation { continuation in
-      AVCaptureDevice.requestAccess(for: .audio) { _ in
-        continuation.resume(returning: status(for: .microphone))
+      // Ensure this is invoked from the main thread; some macOS permission prompts are flaky otherwise
+      // (especially for accessory / menu bar apps).
+      DispatchQueue.main.async {
+        AVCaptureDevice.requestAccess(for: .audio) { _ in
+          continuation.resume(returning: status(for: .microphone))
+        }
       }
     }
   }
