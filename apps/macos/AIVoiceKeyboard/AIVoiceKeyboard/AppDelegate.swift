@@ -238,6 +238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
       isRequestingMicrophonePermission = true
       appState.permissionWarningMessage = "Microphone permission required. Please approve the macOS prompt…"
+      NSApp.activate(ignoringOtherApps: true)
       let requested = await PermissionChecks.request(.microphone)
       isRequestingMicrophonePermission = false
 
