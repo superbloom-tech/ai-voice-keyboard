@@ -30,7 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var permissionWarningMenuItem: NSMenuItem?
   private var cancellables: Set<AnyCancellable> = []
 
-  private lazy var settingsWindowController = SettingsWindowController()
+  private let activationPolicyController = ActivationPolicyController()
+  private lazy var settingsWindowController = SettingsWindowController(
+    activationPolicyController: activationPolicyController
+  )
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
@@ -236,15 +239,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onSuccess()
       } else {
         appState.status = .error
-        appState.permissionWarningMessage = "Microphone required. Open Settings…"
-        openSettings()
+        appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
       }
 
     case .denied, .restricted, .unknown:
       // Permission denied or restricted, show error
       appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Open Settings…"
-      openSettings()
+      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
     }
   }
 
@@ -300,6 +301,11 @@ extension AppState.Status {
 @MainActor
 final class SettingsWindowController {
   private var window: NSWindow?
+  private let activationPolicyController: ActivationPolicyController
+
+  init(activationPolicyController: ActivationPolicyController) {
+    self.activationPolicyController = activationPolicyController
+  }
 
   func show() {
     // If window already exists, just bring it to front
@@ -309,11 +315,8 @@ final class SettingsWindowController {
       return
     }
 
-    // Store the original activation policy
-    let originalPolicy = NSApp.activationPolicy()
-
-    // Switch to regular app to show the window properly
-    NSApp.setActivationPolicy(.regular)
+    // Switch to regular app to show the window properly, but restore safely when all callers release.
+    activationPolicyController.pushRegular()
     NSApp.activate(ignoringOtherApps: true)
 
     // Create the settings window
@@ -326,18 +329,42 @@ final class SettingsWindowController {
     window.center()
     window.isReleasedWhenClosed = false
 
-    // Switch back to accessory when window closes
+    // Restore activation policy when the window closes.
     window.delegate = SettingsWindowDelegate(
       onClose: { [weak self] in
         self?.window = nil
-        if originalPolicy == .accessory {
-          NSApp.setActivationPolicy(.accessory)
-        }
+        self?.activationPolicyController.popRegular()
       }
     )
 
     self.window = window
     window.makeKeyAndOrderFront(nil as Any?)
+  }
+}
+
+@MainActor
+final class ActivationPolicyController {
+  private var regularRequestCount = 0
+  private var policyBeforeFirstRegular: NSApplication.ActivationPolicy?
+
+  func pushRegular() {
+    if regularRequestCount == 0 {
+      policyBeforeFirstRegular = NSApp.activationPolicy()
+      NSApp.setActivationPolicy(.regular)
+    }
+    regularRequestCount += 1
+  }
+
+  func popRegular() {
+    guard regularRequestCount > 0 else { return }
+    regularRequestCount -= 1
+
+    guard regularRequestCount == 0 else { return }
+    defer { policyBeforeFirstRegular = nil }
+
+    if policyBeforeFirstRegular == .accessory {
+      NSApp.setActivationPolicy(.accessory)
+    }
   }
 }
 

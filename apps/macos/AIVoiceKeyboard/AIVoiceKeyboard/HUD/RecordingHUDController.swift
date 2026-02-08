@@ -4,10 +4,17 @@ import SwiftUI
 /// Non-interactive always-on-top HUD shown while recording.
 @MainActor
 final class RecordingHUDController {
+  private enum LayoutConstants {
+    // HUD positioning constants - adjust these to fine-tune visual alignment.
+    static let menuBarOverlap: CGFloat = 4 // Overlap into the menu bar for a more "attached" look.
+    static let gapBelowMenuBar: CGFloat = 0 // Extra gap below the menu bar if needed.
+    static let xOffset: CGFloat = -24 // Horizontal offset from screen center.
+  }
+
   final class Model: ObservableObject {
     @Published var modeLabel: String = "Insert"
     @Published var startedAt: Date = Date()
-    @Published var partialTranscript: String = ""
+    @Published var partialTranscript: String = "" // TODO: wire up partial STT transcript updates.
     @Published var isRecording: Bool = false
   }
 
@@ -76,19 +83,19 @@ final class RecordingHUDController {
   }
 
   private func updatePosition() {
-    let screen = NSScreen.main ?? NSScreen.screens.first
-    guard let visibleFrame = screen?.visibleFrame else { return }
+    guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+#if DEBUG
+      NSLog("[RecordingHUD] Warning: no screen available for HUD positioning")
+#endif
+      return
+    }
+    let visibleFrame = screen.visibleFrame
 
     let frame = panel.frame
-    // `visibleFrame.maxY` is already below the menu bar. If we want the HUD to visually "attach"
-    // to the menu bar, we can allow it to overlap upward by a few points.
-    let menuBarOverlap: CGFloat = 4
-    let gapBelowMenuBar: CGFloat = 0
-    let xOffset: CGFloat = -24
 
     // Top-center of visible screen.
-    let x = visibleFrame.midX - (frame.width / 2) + xOffset
-    let y = visibleFrame.maxY - frame.height + menuBarOverlap - gapBelowMenuBar
+    let x = visibleFrame.midX - (frame.width / 2) + LayoutConstants.xOffset
+    let y = visibleFrame.maxY - frame.height + LayoutConstants.menuBarOverlap - LayoutConstants.gapBelowMenuBar
 
     panel.setFrameOrigin(NSPoint(x: x, y: y))
   }
