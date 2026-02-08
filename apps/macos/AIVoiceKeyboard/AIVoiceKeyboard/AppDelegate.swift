@@ -22,10 +22,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
 
+  private let historyStore = HistoryStore()
+
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
   private var hotKeyErrorMenuItem: NSMenuItem?
   private var permissionWarningMenuItem: NSMenuItem?
+  private var historyMenu: NSMenu?
+  private var restoreClipboardMenuItem: NSMenuItem?
+
+  private var lastClipboardSnapshot: PasteboardSnapshot?
+
   private var cancellables: Set<AnyCancellable> = []
 
   private let showSettingsSelector = Selector(("showSettingsWindow:"))
@@ -67,6 +74,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     permissionWarning.isHidden = true
     menu.addItem(permissionWarning)
     self.permissionWarningMenuItem = permissionWarning
+
+    // History: click an entry to copy to clipboard, then user Cmd+V to paste.
+    let historyMenuItem = NSMenuItem(title: "History", action: nil, keyEquivalent: "")
+    let historyMenu = NSMenu()
+    historyMenuItem.submenu = historyMenu
+    menu.addItem(historyMenuItem)
+    self.historyMenu = historyMenu
 
     menu.addItem(.separator())
 
@@ -173,6 +187,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
       }
       .store(in: &cancellables)
+
+    historyStore.$entries
+      .sink { [weak self] _ in
+        self?.rebuildHistoryMenu()
+      }
+      .store(in: &cancellables)
+
+    rebuildHistoryMenu()
   }
 
   func applicationWillTerminate(_ notification: Notification) {
@@ -236,6 +258,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     NSApp.terminate(nil)
   }
 
+  @objc private func copyHistoryEntry(_ sender: NSMenuItem) {
+    guard let id = sender.representedObject as? UUID else { return }
+    guard let entry = historyStore.entries.first(where: { $0.id == id }) else { return }
+
+    // Keep the original clipboard content until the user explicitly restores it.
+    if lastClipboardSnapshot == nil {
+      lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
+    }
+
+    let pb = NSPasteboard.general
+    pb.clearContents()
+    pb.setString(entry.text, forType: .string)
+
+    rebuildHistoryMenu()
+  }
+
+  @objc private func restoreClipboard(_ sender: NSMenuItem) {
+    guard let snap = lastClipboardSnapshot else { return }
+    snap.restore(to: .general)
+    lastClipboardSnapshot = nil
+    rebuildHistoryMenu()
+  }
+
+  @objc private func clearHistory(_ sender: NSMenuItem) {
+    historyStore.clear()
+  }
+
+#if DEBUG
+  @objc private func addSampleHistoryEntry(_ sender: NSMenuItem) {
+    historyStore.append(mode: .insert, text: "Sample transcript: hello world")
+  }
+#endif
+
+  private func rebuildHistoryMenu() {
+    guard let menu = historyMenu else { return }
+
+    menu.removeAllItems()
+
+    if let _ = lastClipboardSnapshot {
+      let restore = NSMenuItem(
+        title: "Restore Clipboard",
+        action: #selector(restoreClipboard(_:)),
+        keyEquivalent: ""
+      )
+      restore.target = self
+      menu.addItem(restore)
+      menu.addItem(.separator())
+    }
+
+#if DEBUG
+    let addSample = NSMenuItem(title: "Dev: Add Sample Entry", action: #selector(addSampleHistoryEntry(_:)), keyEquivalent: "")
+    addSample.target = self
+    menu.addItem(addSample)
+#endif
+
+    let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistory(_:)), keyEquivalent: "")
+    clear.target = self
+    clear.isEnabled = !historyStore.entries.isEmpty
+    menu.addItem(clear)
+
+    menu.addItem(.separator())
+
+    if historyStore.entries.isEmpty {
+      let empty = NSMenuItem(title: "No history yet", action: nil, keyEquivalent: "")
+      empty.isEnabled = false
+      menu.addItem(empty)
+      return
+    }
+
+    for entry in historyStore.entries {
+      let title = entry.menuTitle(maxLen: 64)
+      let item = NSMenuItem(title: title, action: #selector(copyHistoryEntry(_:)), keyEquivalent: "")
+      item.target = self
+      item.representedObject = entry.id
+      menu.addItem(item)
+    }
+  }
+
   // MARK: - UI
 
   private func updateStatusItemIcon(for status: AppState.Status) {
@@ -267,5 +367,111 @@ extension AppState.Status {
     case .error:
       return "exclamationmark.triangle"
     }
+  }
+}
+
+// MARK: - History + Clipboard
+
+enum HistoryMode: String, Sendable {
+  case insert
+  case edit
+}
+
+struct HistoryEntry: Identifiable, Sendable {
+  let id: UUID
+  let mode: HistoryMode
+  let text: String
+  let createdAt: Date
+
+  init(id: UUID = UUID(), mode: HistoryMode, text: String, createdAt: Date = Date()) {
+    self.id = id
+    self.mode = mode
+    self.text = text
+    self.createdAt = createdAt
+  }
+
+  func menuTitle(maxLen: Int) -> String {
+    let prefix = (mode == .insert) ? "Insert" : "Edit"
+    let raw = text.split(whereSeparator: { $0 == "\n" || $0 == "\r" }).first.map(String.init) ?? ""
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    let body = trimmed.isEmpty ? "(empty)" : trimmed
+
+    if body.count <= maxLen {
+      return "\(prefix): \(body)"
+    }
+    let cut = body.prefix(max(0, maxLen - 1))
+    return "\(prefix): \(cut)…"
+  }
+}
+
+@MainActor
+final class HistoryStore: ObservableObject {
+  @Published private(set) var entries: [HistoryEntry] = []
+
+  private let maxEntries: Int
+
+  init(maxEntries: Int = 30) {
+    self.maxEntries = maxEntries
+  }
+
+  func append(mode: HistoryMode, text: String) {
+    let entry = HistoryEntry(mode: mode, text: text)
+    entries.insert(entry, at: 0)
+    if entries.count > maxEntries {
+      entries.removeLast(entries.count - maxEntries)
+    }
+  }
+
+  func clear() {
+    entries.removeAll()
+  }
+}
+
+struct PasteboardSnapshot: Sendable {
+  struct Item: Sendable {
+    var dataByType: [String: Data]
+    var stringByType: [String: String]
+  }
+
+  var items: [Item]
+
+  static func capture(from pasteboard: NSPasteboard) -> PasteboardSnapshot {
+    let current = pasteboard.pasteboardItems ?? []
+    let items: [Item] = current.map { pbItem in
+      var dataByType: [String: Data] = [:]
+      var stringByType: [String: String] = [:]
+      for t in pbItem.types {
+        let key = t.rawValue
+        if let data = pbItem.data(forType: t) {
+          dataByType[key] = data
+        } else if let str = pbItem.string(forType: t) {
+          stringByType[key] = str
+        }
+      }
+      return Item(dataByType: dataByType, stringByType: stringByType)
+    }
+
+    return PasteboardSnapshot(items: items)
+  }
+
+  func restore(to pasteboard: NSPasteboard) {
+    pasteboard.clearContents()
+
+    if items.isEmpty {
+      return
+    }
+
+    let pbItems: [NSPasteboardItem] = items.map { snap in
+      let item = NSPasteboardItem()
+      for (type, data) in snap.dataByType {
+        item.setData(data, forType: .init(type))
+      }
+      for (type, str) in snap.stringByType {
+        item.setString(str, forType: .init(type))
+      }
+      return item
+    }
+
+    _ = pasteboard.writeObjects(pbItems)
   }
 }
