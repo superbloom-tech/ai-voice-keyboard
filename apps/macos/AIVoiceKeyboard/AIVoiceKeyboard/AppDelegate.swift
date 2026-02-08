@@ -218,6 +218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func toggleInsertRecording() {
     if appState.status == .recordingInsert {
+      appendPlaceholderHistoryFromClipboard(mode: .insert)
       appState.permissionWarningMessage = nil
       appState.status = .idle
       return
@@ -230,6 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func toggleEditRecording() {
     if appState.status == .recordingEdit {
+      appendPlaceholderHistoryFromClipboard(mode: .edit)
       appState.permissionWarningMessage = nil
       appState.status = .idle
       return
@@ -253,6 +255,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     appState.permissionWarningMessage = nil
     return true
+  }
+
+  private func appendPlaceholderHistoryFromClipboard(mode: HistoryMode) {
+#if DEBUG
+    // Placeholder wiring (no STT yet): treat current clipboard text as the "recognized" output.
+    // This allows end-to-end History verification before the real pipeline lands.
+    let pb = NSPasteboard.general
+    guard let s = pb.string(forType: .string) else { return }
+    let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+
+    let maxLen = 10_000
+    let payload = (trimmed.count > maxLen) ? String(trimmed.prefix(maxLen)) : trimmed
+    historyStore.append(mode: mode, text: payload)
+#else
+    _ = mode
+#endif
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
