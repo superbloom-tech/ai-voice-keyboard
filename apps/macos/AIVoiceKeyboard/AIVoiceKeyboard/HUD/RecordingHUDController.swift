@@ -42,7 +42,7 @@ final class RecordingHUDController {
     updatePosition()
   }
 
-  func update(for status: AppState.Status) {
+  func update(for status: AppModel.Status) {
     switch status {
     case .recordingInsert:
       showIfNeeded(modeLabel: "Insert")
