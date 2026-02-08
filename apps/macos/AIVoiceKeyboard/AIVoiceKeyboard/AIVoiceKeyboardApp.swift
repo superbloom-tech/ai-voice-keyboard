@@ -5,13 +5,12 @@ struct AIVoiceKeyboardApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
   var body: some Scene {
-    // Settings window is now managed by SettingsWindowController in AppDelegate
-    // to properly handle .accessory activation policy
-    WindowGroup {
+    // This is a menu bar app (LSUIElement + `.accessory` activation policy). We intentionally
+    // do not create a main WindowGroup, otherwise macOS will show an empty window at launch.
+    //
+    // Settings are presented via `SettingsWindowController` in AppDelegate.
+    Settings {
       EmptyView()
-    }
-    .commands {
-      CommandGroup(replacing: .newItem) { }
     }
   }
 }
