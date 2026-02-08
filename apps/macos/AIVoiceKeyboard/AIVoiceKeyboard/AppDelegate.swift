@@ -193,6 +193,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
       .store(in: &cancellables)
 
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onAppendInsertHistoryNotification(_:)),
+      name: .avkbHistoryAppendInsert,
+      object: nil
+    )
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onAppendEditHistoryNotification(_:)),
+      name: .avkbHistoryAppendEdit,
+      object: nil
+    )
+
     rebuildHistoryMenu()
   }
 
@@ -284,9 +298,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     historyStore.clear()
   }
 
+  @objc private func onAppendInsertHistoryNotification(_ note: Notification) {
+    guard let text = note.userInfo?[HistoryNotifications.textKey] as? String else { return }
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    historyStore.append(mode: .insert, text: trimmed)
+  }
+
+  @objc private func onAppendEditHistoryNotification(_ note: Notification) {
+    guard let text = note.userInfo?[HistoryNotifications.textKey] as? String else { return }
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    historyStore.append(mode: .edit, text: trimmed)
+  }
+
 #if DEBUG
   @objc private func addSampleHistoryEntry(_ sender: NSMenuItem) {
     historyStore.append(mode: .insert, text: "Sample transcript: hello world")
+    historyStore.append(mode: .edit, text: "Sample edit result: rewritten text")
   }
 #endif
 
@@ -466,6 +495,15 @@ final class HistoryStore: ObservableObject {
 
     return dir.appendingPathComponent("history.json", isDirectory: false)
   }
+}
+
+struct HistoryNotifications {
+  static let textKey = "text"
+}
+
+extension Notification.Name {
+  static let avkbHistoryAppendInsert = Notification.Name("avkb.history.append.insert")
+  static let avkbHistoryAppendEdit = Notification.Name("avkb.history.append.edit")
 }
 
 struct PasteboardSnapshot: Sendable {
