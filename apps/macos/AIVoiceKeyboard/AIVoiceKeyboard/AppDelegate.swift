@@ -22,14 +22,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
 
-  private let historyStore = HistoryStore()
+  private let historyStore = HistoryStore(maxEntries: 30)
 
   private var statusItem: NSStatusItem?
   private var hotKeyInfoMenuItem: NSMenuItem?
   private var hotKeyErrorMenuItem: NSMenuItem?
   private var permissionWarningMenuItem: NSMenuItem?
   private var historyMenu: NSMenu?
-  private var restoreClipboardMenuItem: NSMenuItem?
 
   private var lastClipboardSnapshot: PasteboardSnapshot?
 
@@ -372,12 +371,12 @@ extension AppState.Status {
 
 // MARK: - History + Clipboard
 
-enum HistoryMode: String, Sendable {
+enum HistoryMode: String, Codable, Sendable {
   case insert
   case edit
 }
 
-struct HistoryEntry: Identifiable, Sendable {
+struct HistoryEntry: Identifiable, Codable, Sendable {
   let id: UUID
   let mode: HistoryMode
   let text: String
@@ -410,8 +409,9 @@ final class HistoryStore: ObservableObject {
 
   private let maxEntries: Int
 
-  init(maxEntries: Int = 30) {
+  init(maxEntries: Int) {
     self.maxEntries = maxEntries
+    loadFromDisk()
   }
 
   func append(mode: HistoryMode, text: String) {
@@ -420,10 +420,51 @@ final class HistoryStore: ObservableObject {
     if entries.count > maxEntries {
       entries.removeLast(entries.count - maxEntries)
     }
+    saveToDiskBestEffort()
   }
 
   func clear() {
     entries.removeAll()
+    saveToDiskBestEffort()
+  }
+
+  private func loadFromDisk() {
+    do {
+      let url = try historyFileURL()
+      guard FileManager.default.fileExists(atPath: url.path) else { return }
+      let data = try Data(contentsOf: url)
+      entries = try JSONDecoder().decode([HistoryEntry].self, from: data)
+    } catch {
+      // Best-effort only: never block the app on history IO.
+      entries = []
+    }
+  }
+
+  private func saveToDiskBestEffort() {
+    do {
+      let url = try historyFileURL(createDirs: true)
+      let data = try JSONEncoder().encode(entries)
+      try data.write(to: url, options: [.atomic])
+    } catch {
+      // Ignore IO failures (sandbox/permissions/disk issues).
+    }
+  }
+
+  private func historyFileURL(createDirs: Bool = false) throws -> URL {
+    let fm = FileManager.default
+    let base = try fm.url(
+      for: .applicationSupportDirectory,
+      in: .userDomainMask,
+      appropriateFor: nil,
+      create: createDirs
+    )
+
+    let dir = base.appendingPathComponent("AI Voice Keyboard", isDirectory: true)
+    if createDirs {
+      try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+
+    return dir.appendingPathComponent("history.json", isDirectory: false)
   }
 }
 
