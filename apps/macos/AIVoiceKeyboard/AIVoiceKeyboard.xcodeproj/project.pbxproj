@@ -23,7 +23,7 @@
 		B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */; };
 		BFAC76DD1754B6849D53860D /* OpenAIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */; };
 		DC55DABC054B6AF286A7957E /* OpenAIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B44CA6DA2527BD61FAF9AE /* OpenAIClientTests.swift */; };
-		E14543FAC47911AFE55F0B43 /* AppDelegate.swift.backup in Resources */ = {isa = PBXBuildFile; fileRef = 0EEE8752F8324AC1EE86115B /* AppDelegate.swift.backup */; };
+		/* AppDelegate.swift.backup removed */
 		E551C5751655CF87589BB9D8 /* PostProcessingPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D8DE376DE66669CF9D9BAC /* PostProcessingPipelineTests.swift */; };
 		E555905B8C9189460A78B18D /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F81CA1B6898CEDAA3C4BE1 /* AppleSpeechTranscriber.swift */; };
 		ED15A40A3D5DB285D4072A44 /* PasteTextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880D46D9C4D459238B913C18 /* PasteTextInserter.swift */; };
@@ -43,7 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0EEE8752F8324AC1EE86115B /* AppDelegate.swift.backup */ = {isa = PBXFileReference; path = AppDelegate.swift.backup; sourceTree = "<group>"; };
+		/* AppDelegate.swift.backup removed */
 		11F64DDDB241E679A849EBC7 /* LLMRefiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMRefiner.swift; sourceTree = "<group>"; };
 		12421E2D2ED2E488A25F5A96 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		1FFFC5BF16D58272ABD55CBA /* LLMAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMAPIClient.swift; sourceTree = "<group>"; };
@@ -148,7 +148,7 @@
 			children = (
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
 				990332E78C912D3698638D6F /* AppDelegate.swift */,
-				0EEE8752F8324AC1EE86115B /* AppDelegate.swift.backup */,
+				/* AppDelegate.swift.backup removed */
 				9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
 				2DD65E212905B6BB33840145 /* Info.plist */,
 				DC2AD42EB31C03A5BBD7F4D9 /* HUD */,
@@ -281,7 +281,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E14543FAC47911AFE55F0B43 /* AppDelegate.swift.backup in Resources */,
+				/* AppDelegate.swift.backup removed */
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
