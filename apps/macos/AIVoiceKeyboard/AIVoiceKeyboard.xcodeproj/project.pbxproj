@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C7245A289EE14879B756B9EE /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8912FC285C794CB195309695 /* AppleSpeechTranscriber.swift */; };
+		5F0D5B71A0B84EEB8C4EBF1A /* PasteTextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9373BBB505AC45EE94F37FF8 /* PasteTextInserter.swift */; };
+		F394DDF42E0E4B8AA4E6EACA /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00237BC6B66D41B48A0433DD /* TextInserter.swift */; };
 		415B540733F1127F38CA86AA /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */; };
 		2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990332E78C912D3698638D6F /* AppDelegate.swift */; };
 		2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */; };
@@ -16,6 +19,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8912FC285C794CB195309695 /* AppleSpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechTranscriber.swift; sourceTree = "<group>"; };
+		9373BBB505AC45EE94F37FF8 /* PasteTextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteTextInserter.swift; sourceTree = "<group>"; };
+		00237BC6B66D41B48A0433DD /* TextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInserter.swift; sourceTree = "<group>"; };
 		2DD65E212905B6BB33840145 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		933EB4D8365EE1E0DB3742FE /* VoiceKeyboardCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = VoiceKeyboardCore; path = ../../../packages/VoiceKeyboardCore; sourceTree = SOURCE_ROOT; };
 		990332E78C912D3698638D6F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -38,6 +44,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		FFC4E9D6F6604C8E9A02C860 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				8912FC285C794CB195309695 /* AppleSpeechTranscriber.swift */,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+		B9F911460D7B4C5EAC41C426 /* TextInsertion */ = {
+			isa = PBXGroup;
+			children = (
+				00237BC6B66D41B48A0433DD /* TextInserter.swift */,
+				9373BBB505AC45EE94F37FF8 /* PasteTextInserter.swift */,
+			);
+			path = TextInsertion;
+			sourceTree = "<group>";
+		};
 		023D19B8661ECDCC8F81A51D /* Packages */ = {
 			isa = PBXGroup;
 			children = (
@@ -61,6 +84,8 @@
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
 				990332E78C912D3698638D6F /* AppDelegate.swift */,
 				9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
+				FFC4E9D6F6604C8E9A02C860 /* Speech */,
+				B9F911460D7B4C5EAC41C426 /* TextInsertion */,
 				A242B953C6C2A2E6AB973870 /* HUD */,
 				2DD65E212905B6BB33840145 /* Info.plist */,
 				C25764340DAE45347B4DC680 /* Permissions */,
@@ -152,6 +177,9 @@
 			files = (
 				2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */,
 				2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */,
+				C7245A289EE14879B756B9EE /* AppleSpeechTranscriber.swift in Sources */,
+				F394DDF42E0E4B8AA4E6EACA /* TextInserter.swift in Sources */,
+				5F0D5B71A0B84EEB8C4EBF1A /* PasteTextInserter.swift in Sources */,
 				415B540733F1127F38CA86AA /* RecordingHUDController.swift in Sources */,
 				F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */,
 				B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */,

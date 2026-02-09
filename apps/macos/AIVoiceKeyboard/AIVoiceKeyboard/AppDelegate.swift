@@ -31,6 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private let historyStore: HistoryStore
 
+  // Insert-only v0.1 pipeline.
+  private let inserter: TextInserter = PasteTextInserter()
+  private var transcriber: AppleSpeechTranscriber?
+
   override init() {
     let enabled = UserDefaults.standard.bool(forKey: SettingsKeys.persistHistoryEnabled)
     self.historyStore = HistoryStore(maxEntries: 30, persistenceEnabled: enabled)
@@ -54,6 +58,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
+
+    do {
+      transcriber = try AppleSpeechTranscriber()
+    } catch {
+      transcriber = nil
+    }
 
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.statusItem = statusItem
@@ -113,6 +123,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       keyEquivalent: ""
     )
     toggleEdit.target = self
+#if !DEBUG
+    toggleEdit.title = "Toggle Edit Recording (Coming soon)"
+    toggleEdit.isEnabled = false
+#endif
     menu.addItem(toggleEdit)
 
     menu.addItem(.separator())
@@ -161,7 +175,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       case .toggleInsert:
         self.toggleInsertRecording()
       case .toggleEdit:
+#if DEBUG
         self.toggleEditRecording()
+#else
+        // Edit is not implemented yet; keep hotkey consistent with the disabled menu item.
+        self.appState.permissionWarningMessage = "Edit mode coming soon"
+#endif
       }
     }
 
@@ -268,15 +287,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func toggleInsertRecording() {
     if appState.status == .recordingInsert {
-      appendPlaceholderHistoryFromClipboard(mode: .insert)
       appState.permissionWarningMessage = nil
-      appState.status = .idle
+      appState.status = .processing
+
+      Task { [weak self] in
+        guard let self else { return }
+        do {
+          let text = try await self.stopTranscriptionAndInsert()
+          if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            self.historyStore.append(mode: .insert, text: text)
+          }
+          self.appState.status = .idle
+        } catch {
+          self.appState.status = .error
+
+          let ns = error as NSError
+          if ns.domain == "kAFAssistantErrorDomain" && ns.code == 1101 {
+            self.appState.permissionWarningMessage = "Speech error (1101). Check microphone input/device, then retry."
+          } else {
+            self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
+          }
+        }
+      }
       return
     }
 
-    Task {
-      await ensureMicrophonePermissionOrShowError { [weak self] in
-        self?.appState.status = .recordingInsert
+    Task { [weak self] in
+      guard let self else { return }
+      await self.ensureInsertPermissionsOrShowError { [weak self] in
+        guard let self else { return }
+        do {
+          try self.startTranscription()
+          self.appState.status = .recordingInsert
+        } catch {
+          self.appState.status = .error
+          self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
+        }
       }
     }
   }
@@ -296,20 +342,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
+  private func ensureInsertPermissionsOrShowError(onSuccess: @escaping () -> Void) async {
+    // Insert-only v0.1 requires microphone + speech recognition permissions.
+    if PermissionChecks.status(for: .microphone) == .notDetermined {
+      _ = await PermissionChecks.request(.microphone)
+    }
+    if PermissionChecks.status(for: .speechRecognition) == .notDetermined {
+      _ = await PermissionChecks.request(.speechRecognition)
+    }
+
+    let mic = PermissionChecks.status(for: .microphone)
+    let speech = PermissionChecks.status(for: .speechRecognition)
+
+    guard mic.isSatisfied else {
+      appState.status = .error
+      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      return
+    }
+
+    guard speech.isSatisfied else {
+      appState.status = .error
+      appState.permissionWarningMessage = "Speech Recognition required. Use “Open Settings…” from the menu bar."
+      return
+    }
+
+    // Accessibility is required for reliably pasting into other apps via synthetic Cmd+V.
+    // If it's not enabled, we still allow recording/transcription but expect a clipboard-only fallback.
+    if !PermissionChecks.status(for: .accessibility).isSatisfied {
+      appState.permissionWarningMessage = "Accessibility not enabled: will copy to clipboard; enable Accessibility for auto-insert"
+    } else {
+      appState.permissionWarningMessage = nil
+    }
+
+    onSuccess()
+  }
+
   private func ensureMicrophonePermissionOrShowError(onSuccess: @escaping () -> Void) async {
-    // Minimal gating (v0.1): we only require microphone permission to enter a "recording" state.
-    // - Speech Recognition will be required once Apple Speech STT is integrated.
-    // - Accessibility will be required for cross-app selection read/replace and some automation later.
+    // Edit mode is still placeholder; keep microphone gating so the state machine remains usable.
     let currentStatus = PermissionChecks.status(for: .microphone)
 
     switch currentStatus {
     case .authorized:
-      // Permission already granted, proceed
       appState.permissionWarningMessage = nil
       onSuccess()
 
     case .notDetermined:
-      // Request permission
       let newStatus = await PermissionChecks.request(.microphone)
       if newStatus.isSatisfied {
         appState.permissionWarningMessage = nil
@@ -320,7 +397,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
     case .denied, .restricted, .unknown:
-      // Permission denied or restricted, show error
       appState.status = .error
       appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
     }
@@ -328,8 +404,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func appendPlaceholderHistoryFromClipboard(mode: HistoryMode) {
 #if DEBUG
-    // Placeholder wiring (no STT yet): treat current clipboard text as the "recognized" output.
-    // This allows end-to-end History verification before the real pipeline lands.
+    // Developer helper: simulate a transcript by reading clipboard text.
     let pb = NSPasteboard.general
     guard let s = pb.string(forType: .string) else { return }
     let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -341,6 +416,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
     _ = mode
 #endif
+  }
+
+  private func startTranscription() throws {
+    guard let transcriber else {
+      throw NSError(domain: "AIVoiceKeyboard", code: 1, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
+    }
+    try transcriber.start()
+  }
+
+  private func stopTranscriptionAndInsert() async throws -> String {
+    guard let transcriber else {
+      throw NSError(domain: "AIVoiceKeyboard", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
+    }
+
+    let text = try await transcriber.stop(timeoutSeconds: 2.0)
+
+    // Capture a fresh snapshot so the user can restore whatever they had right before this insert.
+    // (We intentionally do not auto-restore in v0.1.)
+    lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
+    rebuildHistoryMenu()
+
+    try inserter.insert(text: text)
+    return text
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
@@ -360,10 +458,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     guard let id = sender.representedObject as? UUID else { return }
     guard let entry = historyStore.entries.first(where: { $0.id == id }) else { return }
 
-    // Keep the original clipboard content until the user explicitly restores it.
-    if lastClipboardSnapshot == nil {
-      lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
-    }
+    // Capture a fresh snapshot so Restore maps to the last user clipboard state.
+    lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
 
     let pb = NSPasteboard.general
     pb.clearContents()
