@@ -454,15 +454,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       processors.append(TextCleaner(rules: config.cleanerRules))
     }
     
-    // v1 LLM refiner not implemented yet
-    // if config.refinerEnabled, let apiClient = createLLMAPIClient(model: config.refinerModel) {
-    //   processors.append(LLMRefiner(apiClient: apiClient))
-    // }
+    // v1 LLM refiner (Issue #33)
+    if config.refinerEnabled, let apiClient = createLLMAPIClient(config: config) {
+      processors.append(LLMRefiner(apiClient: apiClient))
+    }
     
     postProcessingPipeline = PostProcessingPipeline(
       processors: processors,
       fallbackBehavior: config.fallbackBehavior
     )
+  }
+  
+  private func createLLMAPIClient(config: PostProcessingConfig) -> LLMAPIClient? {
+    guard let provider = config.refinerProvider,
+          let model = config.refinerModel else {
+      NSLog("Failed to create LLM API client: missing provider or model")
+      return nil
+    }
+    
+    // Try to load API key
+    let apiKey: String
+    do {
+      guard let key = try config.loadLLMAPIKey() else {
+        NSLog("Failed to create LLM API client: API key not found in Keychain for provider '\(provider.rawValue)'")
+        return nil
+      }
+      apiKey = key
+    } catch {
+      NSLog("Failed to create LLM API client: Keychain error - \(error.localizedDescription)")
+      return nil
+    }
+    
+    switch provider {
+    case .openai:
+      return OpenAIClient(apiKey: apiKey, model: model)
+    case .anthropic:
+      // TODO: Implement AnthropicClient
+      NSLog("Anthropic client not implemented yet")
+      return nil
+    case .ollama:
+      // TODO: Implement OllamaClient
+      NSLog("Ollama client not implemented yet")
+      return nil
+    }
   }
 
   private func startTranscription() throws {
@@ -485,7 +519,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     if let pipeline = postProcessingPipeline {
       do {
-        let result = try await pipeline.process(text: rawText, timeout: 5.0)
+        // Use configured timeout instead of hardcoded value
+        let config = PostProcessingConfig.load()
+        let timeout = config.refinerEnabled ? config.refinerTimeout : config.cleanerTimeout
+        let result = try await pipeline.process(text: rawText, timeout: timeout)
         finalText = result.finalText
         processingResult = result
       } catch {

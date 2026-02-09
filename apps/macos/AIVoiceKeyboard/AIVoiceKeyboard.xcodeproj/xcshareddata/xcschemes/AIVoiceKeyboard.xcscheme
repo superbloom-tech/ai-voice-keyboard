@@ -39,7 +39,20 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B793967E374917DFF1E6AB8E"
+               BuildableName = "AIVoiceKeyboardTests.xctest"
+               BlueprintName = "AIVoiceKeyboardTests"
+               ReferencedContainer = "container:AIVoiceKeyboard.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

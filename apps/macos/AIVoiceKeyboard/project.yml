@@ -26,9 +26,24 @@ targets:
         CODE_SIGNING_ALLOWED: NO
     dependencies:
       - package: VoiceKeyboardCore
+  
+  AIVoiceKeyboardTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: AIVoiceKeyboardTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: tech.superbloom.aivoicekeyboard.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: AIVoiceKeyboard
 
 schemes:
   AIVoiceKeyboard:
     build:
       targets:
         AIVoiceKeyboard: all
+    test:
+      targets:
+        - AIVoiceKeyboardTests
