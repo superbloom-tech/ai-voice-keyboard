@@ -40,6 +40,7 @@ final class AppleSpeechTranscriber {
   private var latestText: String = ""
   private var stopContinuation: CheckedContinuation<String, Error>?
   private var isStopping: Bool = false
+  private var sawNonSilentAudio: Bool = false
 
   init(locale: Locale = .current) throws {
     guard let recognizer = SFSpeechRecognizer(locale: locale) else {
@@ -54,6 +55,7 @@ final class AppleSpeechTranscriber {
 
     latestText = ""
     isStopping = false
+    sawNonSilentAudio = false
 
     let request = SFSpeechAudioBufferRecognitionRequest()
     request.shouldReportPartialResults = true
@@ -70,6 +72,24 @@ final class AppleSpeechTranscriber {
       guard let self else { return }
       guard !self.isStopping else { return }
       guard let request = self.request else { return }
+
+      // Detect whether we ever received non-silent audio during this session.
+      // If the mic is broken/muted, Apple Speech can fail with opaque errors; we prefer
+      // a direct actionable message.
+      if !self.sawNonSilentAudio {
+        let audioBuf = buffer.audioBufferList.pointee.mBuffers
+        if let mData = audioBuf.mData, audioBuf.mDataByteSize > 0 {
+          let count = Int(audioBuf.mDataByteSize) / MemoryLayout<Int16>.size
+          let samples = mData.bindMemory(to: Int16.self, capacity: count)
+          for i in 0..<min(count, 512) {
+            if samples[i] != 0 {
+              self.sawNonSilentAudio = true
+              break
+            }
+          }
+        }
+      }
+
       request.append(buffer)
     }
 
@@ -114,7 +134,15 @@ final class AppleSpeechTranscriber {
         if !trimmed.isEmpty {
           self.finishStop(.success(self.latestText))
         } else {
-          self.finishStop(.failure(TranscriberError.noResult))
+          if !self.sawNonSilentAudio {
+            self.finishStop(.failure(NSError(
+              domain: "AIVoiceKeyboard",
+              code: 1001,
+              userInfo: [NSLocalizedDescriptionKey: "No audio captured. Check microphone input."]
+            )))
+          } else {
+            self.finishStop(.failure(TranscriberError.noResult))
+          }
         }
       }
     }
