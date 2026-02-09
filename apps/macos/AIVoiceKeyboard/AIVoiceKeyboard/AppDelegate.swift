@@ -300,7 +300,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           self.appState.status = .idle
         } catch {
           self.appState.status = .error
-          self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
+
+          let ns = error as NSError
+          if ns.domain == "kAFAssistantErrorDomain" && ns.code == 1101 {
+            self.appState.permissionWarningMessage = "Speech error (1101). Check microphone input/device, then retry."
+          } else {
+            self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
+          }
         }
       }
       return
