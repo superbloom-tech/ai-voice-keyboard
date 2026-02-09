@@ -60,6 +60,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   )
 
   func applicationDidFinishLaunching(_ notification: Notification) {
+    // Unit tests run with a host app. Avoid menu bar setup, global hotkeys, Keychain reads,
+    // and permission-dependent initialization that can hang the test runner.
+    if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+      NSLog("[AppDelegate] XCTest detected - skipping app initialization")
+      return
+    }
+
     NSApp.setActivationPolicy(.accessory)
 
     do {
@@ -70,6 +77,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Setup post-processing pipeline (Issue #26)
     setupPostProcessingPipeline()
+    
+    // Rebuild pipeline when settings change (Issue #35)
+    NotificationCenter.default
+      .publisher(for: .avkbPostProcessingConfigDidChange)
+      .debounce(for: .milliseconds(250), scheduler: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.setupPostProcessingPipeline()
+      }
+      .store(in: &cancellables)
 
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.statusItem = statusItem
@@ -442,11 +458,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   
   private func setupPostProcessingPipeline() {
     let config = PostProcessingConfig.load()
-    NSLog("[PostProcessing][Setup] Config loaded — enabled: %@, cleaner: %@, refiner: %@, provider: %@, model: %@",
+    NSLog("[PostProcessing][Setup] Config loaded — enabled: %@, cleaner: %@, refiner: %@, format: %@, preset: %@, baseURL: %@, model: %@",
           config.enabled ? "YES" : "NO",
           config.cleanerEnabled ? "YES" : "NO",
           config.refinerEnabled ? "YES" : "NO",
-          config.refinerProvider?.rawValue ?? "nil",
+          config.refinerProviderFormat.rawValue,
+          config.refinerOpenAICompatiblePreset.rawValue,
+          config.resolvedRefinerBaseURLString,
           config.refinerModel ?? "nil")
 
     guard config.enabled else {
@@ -478,35 +496,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
   
   private func createLLMAPIClient(config: PostProcessingConfig) -> LLMAPIClient? {
-    guard let provider = config.refinerProvider,
-          let model = config.refinerModel else {
-      NSLog("[PostProcessing][Setup] Cannot create API client: missing provider or model")
-      return nil
-    }
-
-    // Try to load API key
-    let apiKey: String
     do {
-      guard let key = try config.loadLLMAPIKey() else {
-        NSLog("[PostProcessing][Setup] Cannot create API client: API key not found in Keychain for provider '%@'", provider.rawValue)
-        return nil
-      }
-      apiKey = key
-      NSLog("[PostProcessing][Setup] API key loaded from Keychain (length: %d)", apiKey.count)
+      let client = try LLMAPIClientFactory.create(config: config)
+      NSLog("[PostProcessing][Setup] LLM API client created — format: %@, preset: %@",
+            config.refinerProviderFormat.rawValue,
+            config.refinerOpenAICompatiblePreset.rawValue)
+      return client
     } catch {
-      NSLog("[PostProcessing][Setup] Cannot create API client: Keychain error — %@", error.localizedDescription)
-      return nil
-    }
-
-    switch provider {
-    case .openai:
-      NSLog("[PostProcessing][Setup] Creating OpenAIClient — model: %@", model)
-      return OpenAIClient(apiKey: apiKey, model: model)
-    case .anthropic:
-      NSLog("[PostProcessing][Setup] Anthropic client not implemented yet")
-      return nil
-    case .ollama:
-      NSLog("[PostProcessing][Setup] Ollama client not implemented yet")
+      NSLog("[PostProcessing][Setup] Cannot create API client — %@", error.localizedDescription)
       return nil
     }
   }

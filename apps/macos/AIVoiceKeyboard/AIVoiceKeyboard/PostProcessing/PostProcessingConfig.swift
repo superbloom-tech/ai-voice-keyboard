@@ -9,12 +9,47 @@ struct PostProcessingConfig: Codable {
   var refinerEnabled: Bool
   var refinerTimeout: TimeInterval  // Timeout for LLMRefiner (network call)
   var refinerModel: String?
-  var refinerProvider: LLMProvider?
+  var refinerProviderFormat: LLMProviderFormat
+  var refinerOpenAICompatiblePreset: OpenAICompatiblePreset
+  /// Base URL without endpoint path, e.g. `https://api.openai.com/v1`.
+  var refinerBaseURL: String
   var fallbackBehaviorRawValue: Int  // Store FallbackBehavior as Int
   
   var cleanerRules: TextCleaner.CleaningRules {
     get { TextCleaner.CleaningRules(rawValue: cleanerRulesRawValue) }
     set { cleanerRulesRawValue = newValue.rawValue }
+  }
+
+  /// Canonical base URL used by the refiner when constructing the endpoint.
+  /// If `refinerBaseURL` is blank, falls back to a reasonable default per provider.
+  var resolvedRefinerBaseURLString: String {
+    let trimmed = refinerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else {
+      switch refinerProviderFormat {
+      case .openAICompatible:
+        switch refinerOpenAICompatiblePreset {
+        case .openai:
+          return Self.defaultOpenAIBaseURLString
+        case .openrouter:
+          return Self.defaultOpenRouterBaseURLString
+        case .custom:
+          return Self.defaultOpenAIBaseURLString
+        }
+      case .anthropic:
+        return Self.defaultAnthropicBaseURLString
+      }
+    }
+    return trimmed
+  }
+
+  /// Namespaces API keys in Keychain so switching presets doesn't overwrite other keys.
+  var llmAPIKeyNamespace: String {
+    switch refinerProviderFormat {
+    case .openAICompatible:
+      return refinerOpenAICompatiblePreset.rawValue
+    case .anthropic:
+      return "anthropic"
+    }
   }
   
   var fallbackBehavior: PostProcessingPipeline.FallbackBehavior {
@@ -43,7 +78,9 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: Bool,
     refinerTimeout: TimeInterval,
     refinerModel: String?,
-    refinerProvider: LLMProvider?,
+    refinerProviderFormat: LLMProviderFormat,
+    refinerOpenAICompatiblePreset: OpenAICompatiblePreset,
+    refinerBaseURL: String,
     fallbackBehavior: PostProcessingPipeline.FallbackBehavior
   ) {
     self.enabled = enabled
@@ -53,7 +90,9 @@ struct PostProcessingConfig: Codable {
     self.refinerEnabled = refinerEnabled
     self.refinerTimeout = refinerTimeout
     self.refinerModel = refinerModel
-    self.refinerProvider = refinerProvider
+    self.refinerProviderFormat = refinerProviderFormat
+    self.refinerOpenAICompatiblePreset = refinerOpenAICompatiblePreset
+    self.refinerBaseURL = refinerBaseURL
     self.fallbackBehaviorRawValue = {
       switch fallbackBehavior {
       case .returnOriginal: return 0
@@ -71,7 +110,9 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: false,
     refinerTimeout: 2.0,
     refinerModel: nil,
-    refinerProvider: nil,
+    refinerProviderFormat: .openAICompatible,
+    refinerOpenAICompatiblePreset: .openai,
+    refinerBaseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
     fallbackBehavior: .returnOriginal
   )
   
@@ -83,7 +124,9 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: false,
     refinerTimeout: 2.0,
     refinerModel: nil,
-    refinerProvider: nil,
+    refinerProviderFormat: .openAICompatible,
+    refinerOpenAICompatiblePreset: .openai,
+    refinerBaseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
     fallbackBehavior: .returnOriginal
   )
   
@@ -95,9 +138,15 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: false,
     refinerTimeout: 2.0,
     refinerModel: nil,
-    refinerProvider: nil,
+    refinerProviderFormat: .openAICompatible,
+    refinerOpenAICompatiblePreset: .openai,
+    refinerBaseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
     fallbackBehavior: .returnOriginal
   )
+
+  static let defaultOpenAIBaseURLString = "https://api.openai.com/v1"
+  static let defaultOpenRouterBaseURLString = "https://openrouter.ai/api/v1"
+  static let defaultAnthropicBaseURLString = "https://api.anthropic.com/v1"
   
   // MARK: - Codable (Backward Compatibility)
   
@@ -109,7 +158,10 @@ struct PostProcessingConfig: Codable {
     case refinerEnabled
     case refinerTimeout
     case refinerModel
-    case refinerProvider
+    case refinerProviderFormat
+    case refinerOpenAICompatiblePreset
+    case refinerBaseURL
+    case refinerProvider  // legacy (Issue #33)
     case fallbackBehaviorRawValue
   }
   
@@ -123,15 +175,83 @@ struct PostProcessingConfig: Codable {
     refinerEnabled = try container.decode(Bool.self, forKey: .refinerEnabled)
     refinerTimeout = try container.decode(TimeInterval.self, forKey: .refinerTimeout)
     refinerModel = try container.decodeIfPresent(String.self, forKey: .refinerModel)
-    
-    // Backward compatibility: decode String and convert to LLMProvider
-    if let providerString = try container.decodeIfPresent(String.self, forKey: .refinerProvider) {
-      refinerProvider = try? LLMProvider(rawValue: providerString.lowercased())
+
+    // New fields (Issue #35)
+    let decodedFormat = try container.decodeIfPresent(LLMProviderFormat.self, forKey: .refinerProviderFormat)
+    let decodedPreset = try container.decodeIfPresent(OpenAICompatiblePreset.self, forKey: .refinerOpenAICompatiblePreset)
+    let decodedBaseURL = try container.decodeIfPresent(String.self, forKey: .refinerBaseURL)
+
+    if let decodedFormat {
+      refinerProviderFormat = decodedFormat
     } else {
-      refinerProvider = try container.decodeIfPresent(LLMProvider.self, forKey: .refinerProvider)
+      // Legacy mapping from `refinerProvider` (Issue #33)
+      let legacyProvider: LLMProvider?
+      if let providerString = try container.decodeIfPresent(String.self, forKey: .refinerProvider) {
+        legacyProvider = LLMProvider(rawValue: providerString.lowercased())
+      } else {
+        legacyProvider = try container.decodeIfPresent(LLMProvider.self, forKey: .refinerProvider)
+      }
+
+      switch legacyProvider {
+      case .anthropic:
+        refinerProviderFormat = .anthropic
+      default:
+        // `.openai`, `.ollama`, `nil`, etc.
+        refinerProviderFormat = .openAICompatible
+      }
     }
-    
+
+    if let decodedPreset {
+      refinerOpenAICompatiblePreset = decodedPreset
+    } else {
+      // Derive preset from legacy provider when possible
+      let legacyProviderString = (try? container.decodeIfPresent(String.self, forKey: .refinerProvider))?.lowercased()
+      if legacyProviderString == "openrouter" {
+        refinerOpenAICompatiblePreset = .openrouter
+      } else if legacyProviderString == "custom" {
+        refinerOpenAICompatiblePreset = .custom
+      } else if legacyProviderString == "ollama" {
+        refinerOpenAICompatiblePreset = .custom
+      } else {
+        refinerOpenAICompatiblePreset = .openai
+      }
+    }
+
+    // Base URL: if missing, use default for the selected provider.
+    if let decodedBaseURL {
+      refinerBaseURL = decodedBaseURL
+    } else {
+      switch refinerProviderFormat {
+      case .openAICompatible:
+        switch refinerOpenAICompatiblePreset {
+        case .openai:
+          refinerBaseURL = Self.defaultOpenAIBaseURLString
+        case .openrouter:
+          refinerBaseURL = Self.defaultOpenRouterBaseURLString
+        case .custom:
+          refinerBaseURL = Self.defaultOpenAIBaseURLString
+        }
+      case .anthropic:
+        refinerBaseURL = Self.defaultAnthropicBaseURLString
+      }
+    }
+
     fallbackBehaviorRawValue = try container.decode(Int.self, forKey: .fallbackBehaviorRawValue)
+  }
+
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(enabled, forKey: .enabled)
+    try container.encode(cleanerEnabled, forKey: .cleanerEnabled)
+    try container.encode(cleanerRulesRawValue, forKey: .cleanerRulesRawValue)
+    try container.encode(cleanerTimeout, forKey: .cleanerTimeout)
+    try container.encode(refinerEnabled, forKey: .refinerEnabled)
+    try container.encode(refinerTimeout, forKey: .refinerTimeout)
+    try container.encodeIfPresent(refinerModel, forKey: .refinerModel)
+    try container.encode(refinerProviderFormat, forKey: .refinerProviderFormat)
+    try container.encode(refinerOpenAICompatiblePreset, forKey: .refinerOpenAICompatiblePreset)
+    try container.encode(refinerBaseURL, forKey: .refinerBaseURL)
+    try container.encode(fallbackBehaviorRawValue, forKey: .fallbackBehaviorRawValue)
   }
 }
 
@@ -151,7 +271,12 @@ extension PostProcessingConfig {
   func save() {
     guard let data = try? JSONEncoder().encode(self) else { return }
     UserDefaults.standard.set(data, forKey: Self.key)
+    NotificationCenter.default.post(name: .avkbPostProcessingConfigDidChange, object: nil)
   }
+}
+
+extension Notification.Name {
+  static let avkbPostProcessingConfigDidChange = Notification.Name("avkb.postProcessing.config.didChange")
 }
 
 // MARK: - LLM API Key Management
@@ -164,30 +289,27 @@ extension PostProcessingConfig {
   /// - Returns: The API key if available
   /// - Throws: KeychainError if the operation fails
   func loadLLMAPIKey() throws -> String? {
-    guard let provider = refinerProvider else { return nil }
-    return try KeychainManager.load(key: provider.rawValue, service: Self.llmApiKeyService)
+    return try KeychainManager.load(key: llmAPIKeyNamespace, service: Self.llmApiKeyService)
   }
   
   /// Save LLM API key to Keychain
   /// - Parameter apiKey: The API key to save
   /// - Throws: KeychainError if the operation fails
   func saveLLMAPIKey(_ apiKey: String) throws {
-    guard let provider = refinerProvider else { return }
-    try KeychainManager.save(key: provider.rawValue, value: apiKey, service: Self.llmApiKeyService)
+    try KeychainManager.save(key: llmAPIKeyNamespace, value: apiKey, service: Self.llmApiKeyService)
+    NotificationCenter.default.post(name: .avkbPostProcessingConfigDidChange, object: nil)
   }
   
   /// Delete LLM API key from Keychain
   /// - Throws: KeychainError if the operation fails
   func deleteLLMAPIKey() throws {
-    guard let provider = refinerProvider else { return }
-    try KeychainManager.delete(key: provider.rawValue, service: Self.llmApiKeyService)
+    try KeychainManager.delete(key: llmAPIKeyNamespace, service: Self.llmApiKeyService)
+    NotificationCenter.default.post(name: .avkbPostProcessingConfigDidChange, object: nil)
   }
   
   /// Check if LLM API key exists in Keychain
   /// - Returns: true if the key exists, false otherwise
   func hasLLMAPIKey() -> Bool {
-    guard let provider = refinerProvider else { return false }
-    return KeychainManager.exists(key: provider.rawValue, service: Self.llmApiKeyService)
+    return KeychainManager.exists(key: llmAPIKeyNamespace, service: Self.llmApiKeyService)
   }
 }
-
