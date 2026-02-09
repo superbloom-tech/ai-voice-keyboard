@@ -59,13 +59,6 @@ final class TextCleaner: PostProcessor {
         result = first.uppercased() + result.dropFirst()
       }
       
-      // Capitalize after sentence-ending punctuation
-      result = result.replacingOccurrences(
-        of: "([.!?])\\s+([a-z])",
-        with: "$1 ",
-        options: .regularExpression
-      )
-      
       // Manual capitalization after punctuation
       var chars = Array(result)
       var shouldCapitalize = false
