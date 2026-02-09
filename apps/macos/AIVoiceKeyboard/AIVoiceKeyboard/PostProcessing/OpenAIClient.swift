@@ -17,14 +17,31 @@ final class OpenAIClient: LLMAPIClient {
   }
   
   func refine(text: String, systemPrompt: String, timeout: TimeInterval) async throws -> String {
-    // Build request
-    let request = try buildRequest(text: text, systemPrompt: systemPrompt)
-    
-    // Send request with timeout
-    let (data, response) = try await URLSession.shared.data(for: request, timeout: timeout)
-    
-    // Parse response
-    return try parseResponse(data: data, response: response)
+    do {
+      // Build request
+      let request = try buildRequest(text: text, systemPrompt: systemPrompt)
+      
+      // Send request with timeout
+      let (data, response) = try await URLSession.shared.data(for: request, timeout: timeout)
+      
+      // Parse response
+      return try parseResponse(data: data, response: response)
+    } catch let error as LLMAPIError {
+      // Already an LLMAPIError, just rethrow
+      throw error
+    } catch is CancellationError {
+      // Task was cancelled
+      throw LLMAPIError.cancelled
+    } catch let error as URLError {
+      // Network error
+      if error.code == .timedOut {
+        throw LLMAPIError.timeout
+      }
+      throw LLMAPIError.networkError(underlying: error)
+    } catch {
+      // Other errors (e.g., JSON serialization)
+      throw LLMAPIError.invalidResponse
+    }
   }
   
   // MARK: - Private Methods
@@ -56,7 +73,16 @@ final class OpenAIClient: LLMAPIClient {
       throw LLMAPIError.invalidResponse
     }
     
-    guard (200...299).contains(httpResponse.statusCode) else {
+    // Map specific status codes
+    switch httpResponse.statusCode {
+    case 200...299:
+      // Success, continue parsing
+      break
+    case 401, 403:
+      // Invalid API key
+      throw LLMAPIError.invalidAPIKey
+    default:
+      // Other API errors
       let errorMessage = try? parseErrorMessage(from: data)
       throw LLMAPIError.apiError(
         statusCode: httpResponse.statusCode,

@@ -3,47 +3,72 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C7245A289EE14879B756B9EE /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8912FC285C794CB195309695 /* AppleSpeechTranscriber.swift */; };
-		5F0D5B71A0B84EEB8C4EBF1A /* PasteTextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9373BBB505AC45EE94F37FF8 /* PasteTextInserter.swift */; };
-		F394DDF42E0E4B8AA4E6EACA /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00237BC6B66D41B48A0433DD /* TextInserter.swift */; };
-		415B540733F1127F38CA86AA /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */; };
+		13D1CD53938051021D06AEDE /* LLMAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFFC5BF16D58272ABD55CBA /* LLMAPIClient.swift */; };
+		188A532842420FE0BD2BBECF /* MockLLMAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202556A7EB1F5BB55614F7B8 /* MockLLMAPIClient.swift */; };
+		1FF5B48B7C83D13F18CA9776 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12421E2D2ED2E488A25F5A96 /* KeychainManager.swift */; };
 		2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990332E78C912D3698638D6F /* AppDelegate.swift */; };
+		26C491AE3A48EF207FD495B3 /* LLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD18DDCAC688D649565E8C3 /* LLMProvider.swift */; };
 		2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */; };
+		2F5232C7F08262CEB6F71B04 /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F13F940873227C1756DCAC /* RecordingHUDController.swift */; };
+		425D38A610AEA92E9B9247A8 /* KeychainManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26534F3B81D890FF9C27F9D8 /* KeychainManagerTests.swift */; };
+		47263C583E86975660233B2D /* PostProcessingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73A758B9695DC91A92C3B90 /* PostProcessingConfig.swift */; };
 		6C142D85C9F2DA0FA268695F /* VoiceKeyboardCore in Frameworks */ = {isa = PBXBuildFile; productRef = CEDF3561FC64F9D674DD1CEE /* VoiceKeyboardCore */; };
+		70C8A57AFB35085ADA597E78 /* TextCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 332B2285BAD174EB5D4D1D48 /* TextCleaner.swift */; };
+		9F7D49111009120C19DA770C /* LLMRefiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F64DDDB241E679A849EBC7 /* LLMRefiner.swift */; };
+		B1342D983A310DFDC468F544 /* LLMRefinerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFA9DD6CF18465DAD366C95 /* LLMRefinerTests.swift */; };
 		B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */; };
+		BFAC76DD1754B6849D53860D /* OpenAIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */; };
+		DC55DABC054B6AF286A7957E /* OpenAIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B44CA6DA2527BD61FAF9AE /* OpenAIClientTests.swift */; };
+		E14543FAC47911AFE55F0B43 /* AppDelegate.swift.backup in Resources */ = {isa = PBXBuildFile; fileRef = 0EEE8752F8324AC1EE86115B /* AppDelegate.swift.backup */; };
+		E551C5751655CF87589BB9D8 /* PostProcessingPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D8DE376DE66669CF9D9BAC /* PostProcessingPipelineTests.swift */; };
+		E555905B8C9189460A78B18D /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F81CA1B6898CEDAA3C4BE1 /* AppleSpeechTranscriber.swift */; };
+		ED15A40A3D5DB285D4072A44 /* PasteTextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880D46D9C4D459238B913C18 /* PasteTextInserter.swift */; };
 		F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */; };
-		9C0058510DFF4AE19DA3DA9F /* PostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9635AF8C6027487FBFBDFFB0 /* PostProcessor.swift */; };
-		D6676E840E614BC2A4F58013 /* TextCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B9BCC584764D86B46E1B75 /* TextCleaner.swift */; };
-		54F77C514B74488F836E03B6 /* PostProcessingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86E1784FF7B47648BE406A5 /* PostProcessingConfig.swift */; };
-		EC3B068B6807EB1E252878D1 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA95962C8C041C6659401EC4 /* KeychainManager.swift */; };
-		80C5883D68087C53825766B8 /* LLMAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9891152BA97C19288B32EF /* LLMAPIClient.swift */; };
-		A86B449D60849675B7D2181A /* OpenAIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0EFB2969CB3628D1A1F1F1 /* OpenAIClient.swift */; };
-		F7568A8B5A71E342F449C363 /* LLMRefiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 158FCC38020DCDBF09BAF669 /* LLMRefiner.swift */; };
+		F50FB68F95752C3A13B3B24B /* PostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71293D1E7A37E4654058C669 /* PostProcessor.swift */; };
+		FFA66575B55DD5CC4AA75D6E /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F11769D72E2FB09C9B78D8 /* TextInserter.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		57E853819E2599C718D96278 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D68F0D2E97E1F69B94701941 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 062C2629EB76BD61C4E83F95;
+			remoteInfo = AIVoiceKeyboard;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		8912FC285C794CB195309695 /* AppleSpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechTranscriber.swift; sourceTree = "<group>"; };
-		9373BBB505AC45EE94F37FF8 /* PasteTextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteTextInserter.swift; sourceTree = "<group>"; };
-		00237BC6B66D41B48A0433DD /* TextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInserter.swift; sourceTree = "<group>"; };
+		0EEE8752F8324AC1EE86115B /* AppDelegate.swift.backup */ = {isa = PBXFileReference; path = AppDelegate.swift.backup; sourceTree = "<group>"; };
+		11F64DDDB241E679A849EBC7 /* LLMRefiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMRefiner.swift; sourceTree = "<group>"; };
+		12421E2D2ED2E488A25F5A96 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		1FFFC5BF16D58272ABD55CBA /* LLMAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMAPIClient.swift; sourceTree = "<group>"; };
+		202556A7EB1F5BB55614F7B8 /* MockLLMAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLLMAPIClient.swift; sourceTree = "<group>"; };
+		26534F3B81D890FF9C27F9D8 /* KeychainManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManagerTests.swift; sourceTree = "<group>"; };
 		2DD65E212905B6BB33840145 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		32B3D4893DA97C8D2376A548 /* AIVoiceKeyboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIVoiceKeyboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		332B2285BAD174EB5D4D1D48 /* TextCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleaner.swift; sourceTree = "<group>"; };
+		54F11769D72E2FB09C9B78D8 /* TextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInserter.swift; sourceTree = "<group>"; };
+		6DFA9DD6CF18465DAD366C95 /* LLMRefinerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMRefinerTests.swift; sourceTree = "<group>"; };
+		71293D1E7A37E4654058C669 /* PostProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessor.swift; sourceTree = "<group>"; };
+		87D8DE376DE66669CF9D9BAC /* PostProcessingPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPipelineTests.swift; sourceTree = "<group>"; };
+		880D46D9C4D459238B913C18 /* PasteTextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteTextInserter.swift; sourceTree = "<group>"; };
 		933EB4D8365EE1E0DB3742FE /* VoiceKeyboardCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = VoiceKeyboardCore; path = ../../../packages/VoiceKeyboardCore; sourceTree = SOURCE_ROOT; };
 		990332E78C912D3698638D6F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyCenter.swift; sourceTree = "<group>"; };
 		ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenter.swift; sourceTree = "<group>"; };
+		B73A758B9695DC91A92C3B90 /* PostProcessingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingConfig.swift; sourceTree = "<group>"; };
 		BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceKeyboardApp.swift; sourceTree = "<group>"; };
-		C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
+		BFD18DDCAC688D649565E8C3 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
 		D3DF8CCEC1164DF60955772B /* AIVoiceKeyboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIVoiceKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9635AF8C6027487FBFBDFFB0 /* PostProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessor.swift; sourceTree = "<group>"; };
-		C8B9BCC584764D86B46E1B75 /* TextCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleaner.swift; sourceTree = "<group>"; };
-		F86E1784FF7B47648BE406A5 /* PostProcessingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingConfig.swift; sourceTree = "<group>"; };
-		CA95962C8C041C6659401EC4 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
-		BB9891152BA97C19288B32EF /* LLMAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMAPIClient.swift; sourceTree = "<group>"; };
-		BC0EFB2969CB3628D1A1F1F1 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
-		158FCC38020DCDBF09BAF669 /* LLMRefiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMRefiner.swift; sourceTree = "<group>"; };
+		E3B44CA6DA2527BD61FAF9AE /* OpenAIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClientTests.swift; sourceTree = "<group>"; };
+		E5F13F940873227C1756DCAC /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
+		F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
+		F1F81CA1B6898CEDAA3C4BE1 /* AppleSpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechTranscriber.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,36 +83,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		FFC4E9D6F6604C8E9A02C860 /* Speech */ = {
-			isa = PBXGroup;
-			children = (
-				8912FC285C794CB195309695 /* AppleSpeechTranscriber.swift */,
-			);
-			path = Speech;
-			sourceTree = "<group>";
-		};
-		B9F911460D7B4C5EAC41C426 /* TextInsertion */ = {
-			isa = PBXGroup;
-			children = (
-				00237BC6B66D41B48A0433DD /* TextInserter.swift */,
-				9373BBB505AC45EE94F37FF8 /* PasteTextInserter.swift */,
-			);
-			path = TextInsertion;
-			sourceTree = "<group>";
-		};
-		6EFB56DEAC6C405692431C09 /* PostProcessing */ = {
-			isa = PBXGroup;
-			children = (
-				9635AF8C6027487FBFBDFFB0 /* PostProcessor.swift */,
-				C8B9BCC584764D86B46E1B75 /* TextCleaner.swift */,
-				F86E1784FF7B47648BE406A5 /* PostProcessingConfig.swift */,
-				BB9891152BA97C19288B32EF /* LLMAPIClient.swift */,
-				BC0EFB2969CB3628D1A1F1F1 /* OpenAIClient.swift */,
-				158FCC38020DCDBF09BAF669 /* LLMRefiner.swift */,
-			);
-			path = PostProcessing;
-			sourceTree = "<group>";
-		};
 		023D19B8661ECDCC8F81A51D /* Packages */ = {
 			isa = PBXGroup;
 			children = (
@@ -96,13 +91,56 @@
 			name = Packages;
 			sourceTree = "<group>";
 		};
+		0D7D8302B4B9FF7545E492B2 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				F1F81CA1B6898CEDAA3C4BE1 /* AppleSpeechTranscriber.swift */,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+		4A92329B06285FF64D19C3B8 /* PostProcessing */ = {
+			isa = PBXGroup;
+			children = (
+				1FFFC5BF16D58272ABD55CBA /* LLMAPIClient.swift */,
+				BFD18DDCAC688D649565E8C3 /* LLMProvider.swift */,
+				11F64DDDB241E679A849EBC7 /* LLMRefiner.swift */,
+				F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */,
+				B73A758B9695DC91A92C3B90 /* PostProcessingConfig.swift */,
+				71293D1E7A37E4654058C669 /* PostProcessor.swift */,
+				332B2285BAD174EB5D4D1D48 /* TextCleaner.swift */,
+			);
+			path = PostProcessing;
+			sourceTree = "<group>";
+		};
 		4AED26F803CCEBD4B8EE8CBF = {
 			isa = PBXGroup;
 			children = (
 				A0BF617B5D598770A1DD309D /* AIVoiceKeyboard */,
+				605C1EA84C782B8477C543AE /* AIVoiceKeyboardTests */,
 				023D19B8661ECDCC8F81A51D /* Packages */,
 				C4BAAD027FE72CBDF43C3059 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		605C1EA84C782B8477C543AE /* AIVoiceKeyboardTests */ = {
+			isa = PBXGroup;
+			children = (
+				972AD27EB92C54F358AC848D /* PostProcessing */,
+			);
+			path = AIVoiceKeyboardTests;
+			sourceTree = "<group>";
+		};
+		972AD27EB92C54F358AC848D /* PostProcessing */ = {
+			isa = PBXGroup;
+			children = (
+				26534F3B81D890FF9C27F9D8 /* KeychainManagerTests.swift */,
+				6DFA9DD6CF18465DAD366C95 /* LLMRefinerTests.swift */,
+				202556A7EB1F5BB55614F7B8 /* MockLLMAPIClient.swift */,
+				E3B44CA6DA2527BD61FAF9AE /* OpenAIClientTests.swift */,
+				87D8DE376DE66669CF9D9BAC /* PostProcessingPipelineTests.swift */,
+			);
+			path = PostProcessing;
 			sourceTree = "<group>";
 		};
 		A0BF617B5D598770A1DD309D /* AIVoiceKeyboard */ = {
@@ -110,24 +148,17 @@
 			children = (
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
 				990332E78C912D3698638D6F /* AppDelegate.swift */,
+				0EEE8752F8324AC1EE86115B /* AppDelegate.swift.backup */,
 				9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
-				FFC4E9D6F6604C8E9A02C860 /* Speech */,
-				B9F911460D7B4C5EAC41C426 /* TextInsertion */,
-				6EFB56DEAC6C405692431C09 /* PostProcessing */,
-				A242B953C6C2A2E6AB973870 /* HUD */,
 				2DD65E212905B6BB33840145 /* Info.plist */,
+				DC2AD42EB31C03A5BBD7F4D9 /* HUD */,
 				C25764340DAE45347B4DC680 /* Permissions */,
-				D9E8F1A2B3C4D5E6F7A8B9C0 /* Utils */,
+				4A92329B06285FF64D19C3B8 /* PostProcessing */,
+				0D7D8302B4B9FF7545E492B2 /* Speech */,
+				F271F567F7F753E0CEEF261C /* TextInsertion */,
+				F91AC0DEFBF4996FBAE352FA /* Utils */,
 			);
 			path = AIVoiceKeyboard;
-			sourceTree = "<group>";
-		};
-		A242B953C6C2A2E6AB973870 /* HUD */ = {
-			isa = PBXGroup;
-			children = (
-				C5EE5AB74948F90340F0C1C8 /* RecordingHUDController.swift */,
-			);
-			path = HUD;
 			sourceTree = "<group>";
 		};
 		C25764340DAE45347B4DC680 /* Permissions */ = {
@@ -138,20 +169,38 @@
 			path = Permissions;
 			sourceTree = "<group>";
 		};
-		D9E8F1A2B3C4D5E6F7A8B9C0 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				CA95962C8C041C6659401EC4 /* KeychainManager.swift */,
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
 		C4BAAD027FE72CBDF43C3059 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				D3DF8CCEC1164DF60955772B /* AIVoiceKeyboard.app */,
+				32B3D4893DA97C8D2376A548 /* AIVoiceKeyboardTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DC2AD42EB31C03A5BBD7F4D9 /* HUD */ = {
+			isa = PBXGroup;
+			children = (
+				E5F13F940873227C1756DCAC /* RecordingHUDController.swift */,
+			);
+			path = HUD;
+			sourceTree = "<group>";
+		};
+		F271F567F7F753E0CEEF261C /* TextInsertion */ = {
+			isa = PBXGroup;
+			children = (
+				880D46D9C4D459238B913C18 /* PasteTextInserter.swift */,
+				54F11769D72E2FB09C9B78D8 /* TextInserter.swift */,
+			);
+			path = TextInsertion;
+			sourceTree = "<group>";
+		};
+		F91AC0DEFBF4996FBAE352FA /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				12421E2D2ED2E488A25F5A96 /* KeychainManager.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -162,6 +211,7 @@
 			buildConfigurationList = F26CB501690367101D6A1E5E /* Build configuration list for PBXNativeTarget "AIVoiceKeyboard" */;
 			buildPhases = (
 				2CAE9DFFCB78F86EABE050F9 /* Sources */,
+				D0E24C5B7FB7A488D9169B86 /* Resources */,
 				934F07DA020B85257327F76C /* Frameworks */,
 			);
 			buildRules = (
@@ -175,6 +225,24 @@
 			productName = AIVoiceKeyboard;
 			productReference = D3DF8CCEC1164DF60955772B /* AIVoiceKeyboard.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B793967E374917DFF1E6AB8E /* AIVoiceKeyboardTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 019A0E33685CD9215B3FC224 /* Build configuration list for PBXNativeTarget "AIVoiceKeyboardTests" */;
+			buildPhases = (
+				37C95A81DBAB026F8B280AC0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A2F95364D6CBA6094A64038B /* PBXTargetDependency */,
+			);
+			name = AIVoiceKeyboardTests;
+			packageProductDependencies = (
+			);
+			productName = AIVoiceKeyboardTests;
+			productReference = 32B3D4893DA97C8D2376A548 /* AIVoiceKeyboardTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -203,9 +271,21 @@
 			projectRoot = "";
 			targets = (
 				062C2629EB76BD61C4E83F95 /* AIVoiceKeyboard */,
+				B793967E374917DFF1E6AB8E /* AIVoiceKeyboardTests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0E24C5B7FB7A488D9169B86 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E14543FAC47911AFE55F0B43 /* AppDelegate.swift.backup in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		2CAE9DFFCB78F86EABE050F9 /* Sources */ = {
@@ -214,23 +294,44 @@
 			files = (
 				2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */,
 				2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */,
-				C7245A289EE14879B756B9EE /* AppleSpeechTranscriber.swift in Sources */,
-				F394DDF42E0E4B8AA4E6EACA /* TextInserter.swift in Sources */,
-				5F0D5B71A0B84EEB8C4EBF1A /* PasteTextInserter.swift in Sources */,
-				415B540733F1127F38CA86AA /* RecordingHUDController.swift in Sources */,
+				E555905B8C9189460A78B18D /* AppleSpeechTranscriber.swift in Sources */,
 				F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */,
+				1FF5B48B7C83D13F18CA9776 /* KeychainManager.swift in Sources */,
+				13D1CD53938051021D06AEDE /* LLMAPIClient.swift in Sources */,
+				26C491AE3A48EF207FD495B3 /* LLMProvider.swift in Sources */,
+				9F7D49111009120C19DA770C /* LLMRefiner.swift in Sources */,
+				BFAC76DD1754B6849D53860D /* OpenAIClient.swift in Sources */,
+				ED15A40A3D5DB285D4072A44 /* PasteTextInserter.swift in Sources */,
 				B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */,
-				9C0058510DFF4AE19DA3DA9F /* PostProcessor.swift in Sources */,
-				D6676E840E614BC2A4F58013 /* TextCleaner.swift in Sources */,
-				54F77C514B74488F836E03B6 /* PostProcessingConfig.swift in Sources */,
-				EC3B068B6807EB1E252878D1 /* KeychainManager.swift in Sources */,
-				80C5883D68087C53825766B8 /* LLMAPIClient.swift in Sources */,
-				A86B449D60849675B7D2181A /* OpenAIClient.swift in Sources */,
-				F7568A8B5A71E342F449C363 /* LLMRefiner.swift in Sources */,
+				47263C583E86975660233B2D /* PostProcessingConfig.swift in Sources */,
+				F50FB68F95752C3A13B3B24B /* PostProcessor.swift in Sources */,
+				2F5232C7F08262CEB6F71B04 /* RecordingHUDController.swift in Sources */,
+				70C8A57AFB35085ADA597E78 /* TextCleaner.swift in Sources */,
+				FFA66575B55DD5CC4AA75D6E /* TextInserter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		37C95A81DBAB026F8B280AC0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				425D38A610AEA92E9B9247A8 /* KeychainManagerTests.swift in Sources */,
+				B1342D983A310DFDC468F544 /* LLMRefinerTests.swift in Sources */,
+				188A532842420FE0BD2BBECF /* MockLLMAPIClient.swift in Sources */,
+				DC55DABC054B6AF286A7957E /* OpenAIClientTests.swift in Sources */,
+				E551C5751655CF87589BB9D8 /* PostProcessingPipelineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A2F95364D6CBA6094A64038B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 062C2629EB76BD61C4E83F95 /* AIVoiceKeyboard */;
+			targetProxy = 57E853819E2599C718D96278 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		5E9C3B42F99B4E4F3F780D3F /* Release */ = {
@@ -332,6 +433,40 @@
 			};
 			name = Debug;
 		};
+		7E0D6F5D78D66A0EF797D47F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = tech.superbloom.aivoicekeyboard.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AIVoiceKeyboard.app/Contents/MacOS/AIVoiceKeyboard";
+			};
+			name = Release;
+		};
+		ED376B67206227BCE1D329EF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = tech.superbloom.aivoicekeyboard.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AIVoiceKeyboard.app/Contents/MacOS/AIVoiceKeyboard";
+			};
+			name = Debug;
+		};
 		EE8ED77239C784DC9671C28F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -391,6 +526,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		019A0E33685CD9215B3FC224 /* Build configuration list for PBXNativeTarget "AIVoiceKeyboardTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED376B67206227BCE1D329EF /* Debug */,
+				7E0D6F5D78D66A0EF797D47F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		6785EA6EB7838C64508E10A6 /* Build configuration list for PBXProject "AIVoiceKeyboard" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -31,6 +31,9 @@ final class LLMRefiner: PostProcessor {
       default:
         throw PostProcessingError.processingFailed(underlying: error)
       }
+    } catch is CancellationError {
+      // Catch CancellationError as fallback
+      throw PostProcessingError.cancelled
     } catch {
       throw PostProcessingError.processingFailed(underlying: error)
     }

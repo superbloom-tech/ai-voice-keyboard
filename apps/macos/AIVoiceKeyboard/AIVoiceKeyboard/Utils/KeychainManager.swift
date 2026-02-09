@@ -38,19 +38,30 @@ final class KeychainManager {
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: key,
-      kSecValueData as String: data
+      kSecValueData as String: data,
+      kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
     ]
     
-    // Try to delete existing item first
-    SecItemDelete(query as CFDictionary)
+    // Try to add first
+    var status = SecItemAdd(query as CFDictionary, nil)
     
-    // Add new item
-    let status = SecItemAdd(query as CFDictionary, nil)
+    if status == errSecDuplicateItem {
+      // Item exists, update it
+      let updateQuery: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: service,
+        kSecAttrAccount as String: key
+      ]
+      
+      let updateAttributes: [String: Any] = [
+        kSecValueData as String: data,
+        kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+      ]
+      
+      status = SecItemUpdate(updateQuery as CFDictionary, updateAttributes as CFDictionary)
+    }
     
     guard status == errSecSuccess else {
-      if status == errSecDuplicateItem {
-        throw KeychainError.duplicateItem
-      }
       throw KeychainError.unexpectedStatus(status)
     }
   }
@@ -59,9 +70,9 @@ final class KeychainManager {
   /// - Parameters:
   ///   - key: The key to identify the item
   ///   - service: The service name
-  /// - Returns: The stored string value
-  /// - Throws: KeychainError if the operation fails
-  static func load(key: String, service: String) throws -> String {
+  /// - Returns: The stored string value, or nil if not found
+  /// - Throws: KeychainError if the operation fails (but not for itemNotFound)
+  static func load(key: String, service: String) throws -> String? {
     let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
@@ -75,7 +86,7 @@ final class KeychainManager {
     
     guard status == errSecSuccess else {
       if status == errSecItemNotFound {
-        throw KeychainError.itemNotFound
+        return nil
       }
       throw KeychainError.unexpectedStatus(status)
     }

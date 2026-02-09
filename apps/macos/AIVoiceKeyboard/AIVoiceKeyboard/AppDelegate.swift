@@ -467,25 +467,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   
   private func createLLMAPIClient(config: PostProcessingConfig) -> LLMAPIClient? {
     guard let provider = config.refinerProvider,
-          let model = config.refinerModel,
-          let apiKey = try? config.loadLLMAPIKey() else {
-      NSLog("Failed to create LLM API client: missing provider, model, or API key")
+          let model = config.refinerModel else {
+      NSLog("Failed to create LLM API client: missing provider or model")
+      return nil
+    }
+    
+    // Try to load API key
+    let apiKey: String
+    do {
+      guard let key = try config.loadLLMAPIKey() else {
+        NSLog("Failed to create LLM API client: API key not found in Keychain for provider '\(provider.rawValue)'")
+        return nil
+      }
+      apiKey = key
+    } catch {
+      NSLog("Failed to create LLM API client: Keychain error - \(error.localizedDescription)")
       return nil
     }
     
     switch provider {
-    case "openai":
+    case .openai:
       return OpenAIClient(apiKey: apiKey, model: model)
-    case "anthropic":
+    case .anthropic:
       // TODO: Implement AnthropicClient
       NSLog("Anthropic client not implemented yet")
       return nil
-    case "ollama":
+    case .ollama:
       // TODO: Implement OllamaClient
       NSLog("Ollama client not implemented yet")
-      return nil
-    default:
-      NSLog("Unknown LLM provider: \(provider)")
       return nil
     }
   }
@@ -510,7 +519,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     if let pipeline = postProcessingPipeline {
       do {
-        let result = try await pipeline.process(text: rawText, timeout: 5.0)
+        // Use configured timeout instead of hardcoded value
+        let config = PostProcessingConfig.load()
+        let timeout = config.refinerEnabled ? config.refinerTimeout : config.cleanerTimeout
+        let result = try await pipeline.process(text: rawText, timeout: timeout)
         finalText = result.finalText
         processingResult = result
       } catch {

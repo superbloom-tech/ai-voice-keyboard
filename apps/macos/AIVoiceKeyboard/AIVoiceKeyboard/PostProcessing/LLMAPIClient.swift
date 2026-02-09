@@ -50,10 +50,21 @@ enum LLMAPIError: LocalizedError {
 extension URLSession {
   /// Perform a data task with timeout
   func data(for request: URLRequest, timeout: TimeInterval) async throws -> (Data, URLResponse) {
-    try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
+    // Validate timeout
+    guard timeout > 0 else {
+      throw LLMAPIError.timeout
+    }
+    
+    return try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
       // Add the actual request task
       group.addTask {
-        try await self.data(for: request)
+        do {
+          return try await self.data(for: request)
+        } catch is CancellationError {
+          throw LLMAPIError.cancelled
+        } catch {
+          throw error
+        }
       }
       
       // Add the timeout task
