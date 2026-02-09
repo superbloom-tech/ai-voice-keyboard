@@ -8,6 +8,7 @@ struct PostProcessingConfig: Codable {
   var refinerEnabled: Bool
   var refinerTimeout: TimeInterval
   var refinerModel: String?
+  var refinerProvider: String?  // "openai" / "anthropic" / "ollama"
   var fallbackBehaviorRawValue: Int  // Store FallbackBehavior as Int
   
   var cleanerRules: TextCleaner.CleaningRules {
@@ -40,6 +41,7 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: Bool,
     refinerTimeout: TimeInterval,
     refinerModel: String?,
+    refinerProvider: String?,
     fallbackBehavior: PostProcessingPipeline.FallbackBehavior
   ) {
     self.enabled = enabled
@@ -48,6 +50,7 @@ struct PostProcessingConfig: Codable {
     self.refinerEnabled = refinerEnabled
     self.refinerTimeout = refinerTimeout
     self.refinerModel = refinerModel
+    self.refinerProvider = refinerProvider
     self.fallbackBehaviorRawValue = {
       switch fallbackBehavior {
       case .returnOriginal: return 0
@@ -64,6 +67,7 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: false,
     refinerTimeout: 2.0,
     refinerModel: nil,
+    refinerProvider: nil,
     fallbackBehavior: .returnOriginal
   )
   
@@ -74,6 +78,7 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: false,
     refinerTimeout: 2.0,
     refinerModel: nil,
+    refinerProvider: nil,
     fallbackBehavior: .returnOriginal
   )
   
@@ -84,6 +89,7 @@ struct PostProcessingConfig: Codable {
     refinerEnabled: false,
     refinerTimeout: 2.0,
     refinerModel: nil,
+    refinerProvider: nil,
     fallbackBehavior: .returnOriginal
   )
 }
@@ -106,3 +112,41 @@ extension PostProcessingConfig {
     UserDefaults.standard.set(data, forKey: Self.key)
   }
 }
+
+// MARK: - LLM API Key Management
+
+extension PostProcessingConfig {
+  /// Keychain service name for LLM API keys
+  static let llmApiKeyService = "ai.voice.keyboard.llm.apikey"
+  
+  /// Load LLM API key from Keychain
+  /// - Returns: The API key if available
+  /// - Throws: KeychainError if the operation fails
+  func loadLLMAPIKey() throws -> String? {
+    guard let provider = refinerProvider else { return nil }
+    return try KeychainManager.load(key: provider, service: Self.llmApiKeyService)
+  }
+  
+  /// Save LLM API key to Keychain
+  /// - Parameter apiKey: The API key to save
+  /// - Throws: KeychainError if the operation fails
+  func saveLLMAPIKey(_ apiKey: String) throws {
+    guard let provider = refinerProvider else { return }
+    try KeychainManager.save(key: provider, value: apiKey, service: Self.llmApiKeyService)
+  }
+  
+  /// Delete LLM API key from Keychain
+  /// - Throws: KeychainError if the operation fails
+  func deleteLLMAPIKey() throws {
+    guard let provider = refinerProvider else { return }
+    try KeychainManager.delete(key: provider, service: Self.llmApiKeyService)
+  }
+  
+  /// Check if LLM API key exists in Keychain
+  /// - Returns: true if the key exists, false otherwise
+  func hasLLMAPIKey() -> Bool {
+    guard let provider = refinerProvider else { return false }
+    return KeychainManager.exists(key: provider, service: Self.llmApiKeyService)
+  }
+}
+

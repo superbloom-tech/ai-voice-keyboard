@@ -454,15 +454,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       processors.append(TextCleaner(rules: config.cleanerRules))
     }
     
-    // v1 LLM refiner not implemented yet
-    // if config.refinerEnabled, let apiClient = createLLMAPIClient(model: config.refinerModel) {
-    //   processors.append(LLMRefiner(apiClient: apiClient))
-    // }
+    // v1 LLM refiner (Issue #33)
+    if config.refinerEnabled, let apiClient = createLLMAPIClient(config: config) {
+      processors.append(LLMRefiner(apiClient: apiClient))
+    }
     
     postProcessingPipeline = PostProcessingPipeline(
       processors: processors,
       fallbackBehavior: config.fallbackBehavior
     )
+  }
+  
+  private func createLLMAPIClient(config: PostProcessingConfig) -> LLMAPIClient? {
+    guard let provider = config.refinerProvider,
+          let model = config.refinerModel,
+          let apiKey = try? config.loadLLMAPIKey() else {
+      NSLog("Failed to create LLM API client: missing provider, model, or API key")
+      return nil
+    }
+    
+    switch provider {
+    case "openai":
+      return OpenAIClient(apiKey: apiKey, model: model)
+    case "anthropic":
+      // TODO: Implement AnthropicClient
+      NSLog("Anthropic client not implemented yet")
+      return nil
+    case "ollama":
+      // TODO: Implement OllamaClient
+      NSLog("Ollama client not implemented yet")
+      return nil
+    default:
+      NSLog("Unknown LLM provider: \(provider)")
+      return nil
+    }
   }
 
   private func startTranscription() throws {
