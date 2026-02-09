@@ -24,11 +24,7 @@ final class PasteTextInserter: TextInserter {
     }
   }
 
-  private let restoreDelaySeconds: Double
-
-  init(restoreDelaySeconds: Double = 0.2) {
-    self.restoreDelaySeconds = restoreDelaySeconds
-  }
+  init() {}
 
   func insert(text: String) throws {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -36,24 +32,13 @@ final class PasteTextInserter: TextInserter {
 
     let pb = NSPasteboard.general
 
-    // Snapshot before we mutate the clipboard.
-    // IMPORTANT: do not blindly restore if the user changed the clipboard during the delay.
-    let snapshot = PasteboardSnapshot.capture(from: .general)
-
+    // v0.1 behavior: keep the transcript in the clipboard so users can Cmd+V manually
+    // even if synthetic Cmd+V is blocked by the OS/app. The app menu offers a
+    // "Restore Original Clipboard" action (snapshot managed by AppDelegate).
     pb.clearContents()
     pb.setString(trimmed, forType: .string)
 
-    // Record the change count after we write our paste payload.
-    let expectedChangeCount = pb.changeCount
-
     try postPasteKeyChord()
-
-    // Give the target app a moment to consume the clipboard before restoring.
-    DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelaySeconds) {
-      // Only restore if the clipboard is still exactly what we last wrote.
-      guard pb.changeCount == expectedChangeCount else { return }
-      _ = snapshot.restore(to: .general)
-    }
   }
 
   private func postPasteKeyChord() throws {

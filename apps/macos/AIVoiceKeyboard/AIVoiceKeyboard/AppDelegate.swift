@@ -413,6 +413,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let text = try await transcriber.stop(timeoutSeconds: 2.0)
+
+    // Keep an explicit snapshot so the user can restore the original clipboard from the menu.
+    // This is intentionally not auto-restored in v0.1 (see PasteTextInserter), because
+    // synthetic Cmd+V can be blocked in some environments.
+    if lastClipboardSnapshot == nil {
+      lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
+      rebuildHistoryMenu()
+    }
+
     try inserter.insert(text: text)
     return text
   }
