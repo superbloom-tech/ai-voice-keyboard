@@ -40,6 +40,7 @@ final class AppleSpeechTranscriber {
   private var latestText: String = ""
   private var stopContinuation: CheckedContinuation<String, Error>?
   private var isStopping: Bool = false
+  private var stopSawLocalService1101: Bool = false
 
   init(locale: Locale = .current) throws {
     guard let recognizer = SFSpeechRecognizer(locale: locale) else {
@@ -54,6 +55,7 @@ final class AppleSpeechTranscriber {
 
     latestText = ""
     isStopping = false
+    stopSawLocalService1101 = false
 
     let request = SFSpeechAudioBufferRecognitionRequest()
     request.shouldReportPartialResults = true
@@ -88,7 +90,13 @@ final class AppleSpeechTranscriber {
       }
 
       if let error, self.isStopping {
-        self.finishStop(.failure(error))
+        if self.isLocalSpeechService1101(error) {
+          // System local speech service can be transiently unavailable. Prefer waiting for a final
+          // result or the timeout best-effort path before failing hard.
+          self.stopSawLocalService1101 = true
+        } else {
+          self.finishStop(.failure(error))
+        }
       }
     }
   }
@@ -114,7 +122,14 @@ final class AppleSpeechTranscriber {
         if !trimmed.isEmpty {
           self.finishStop(.success(self.latestText))
         } else {
-          self.finishStop(.failure(TranscriberError.noResult))
+          if self.stopSawLocalService1101 {
+            // Preserve the original error for debugging; most users can recover by retrying.
+            self.finishStop(.failure(NSError(domain: "kAFAssistantErrorDomain", code: 1101, userInfo: [
+              NSLocalizedDescriptionKey: "Local speech recognition service unavailable (1101)"
+            ])))
+          } else {
+            self.finishStop(.failure(TranscriberError.noResult))
+          }
         }
       }
     }
@@ -135,5 +150,10 @@ final class AppleSpeechTranscriber {
     case .failure(let error):
       cont.resume(throwing: error)
     }
+  }
+
+  private func isLocalSpeechService1101(_ error: Error) -> Bool {
+    let ns = error as NSError
+    return ns.domain == "kAFAssistantErrorDomain" && ns.code == 1101
   }
 }

@@ -294,6 +294,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           }
           self.appState.status = .idle
         } catch {
+          // Auto-retry once for intermittent Apple Speech local service failures (1101).
+          let ns = error as NSError
+          if ns.domain == "kAFAssistantErrorDomain" && ns.code == 1101 {
+            do {
+              try await Task.sleep(nanoseconds: 600_000_000)
+              let text = try await self.stopTranscriptionAndInsert()
+              if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                self.historyStore.append(mode: .insert, text: text)
+              }
+              self.appState.status = .idle
+              return
+            } catch {
+              // Fall through to the standard error UI.
+            }
+          }
+
           self.appState.status = .error
           self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
         }
