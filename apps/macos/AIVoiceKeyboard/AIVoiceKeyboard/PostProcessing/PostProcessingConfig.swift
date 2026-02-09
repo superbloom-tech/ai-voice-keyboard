@@ -94,7 +94,7 @@ extension PostProcessingConfig {
   private static let key = "avkb.postProcessing.config"
   
   static func load() -> PostProcessingConfig {
-    guard let data = UserDefaults.standard.data(forKey: key),
+    guard let data = UserDefaults.standard.data(forKey: Self.key),
           let config = try? JSONDecoder().decode(PostProcessingConfig.self, from: data) else {
       return .default
     }
@@ -103,6 +103,6 @@ extension PostProcessingConfig {
   
   func save() {
     guard let data = try? JSONEncoder().encode(self) else { return }
-    UserDefaults.standard.set(data, forKey: key)
+    UserDefaults.standard.set(data, forKey: Self.key)
   }
 }
