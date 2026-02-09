@@ -355,6 +355,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     onSuccess()
   }
 
+  private func ensureMicrophonePermissionOrShowError(onSuccess: @escaping () -> Void) async {
+    // Edit mode is still placeholder; keep microphone gating so the state machine remains usable.
+    let currentStatus = PermissionChecks.status(for: .microphone)
+
+    switch currentStatus {
+    case .authorized:
+      appState.permissionWarningMessage = nil
+      onSuccess()
+
+    case .notDetermined:
+      let newStatus = await PermissionChecks.request(.microphone)
+      if newStatus.isSatisfied {
+        appState.permissionWarningMessage = nil
+        onSuccess()
+      } else {
+        appState.status = .error
+        appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      }
+
+    case .denied, .restricted, .unknown:
+      appState.status = .error
+      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+    }
+  }
+
   private func appendPlaceholderHistoryFromClipboard(mode: HistoryMode) {
 #if DEBUG
     // Developer helper: simulate a transcript by reading clipboard text.
