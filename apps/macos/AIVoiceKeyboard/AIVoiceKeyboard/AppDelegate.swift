@@ -34,6 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   // Insert-only v0.1 pipeline.
   private let inserter: TextInserter = PasteTextInserter()
   private var transcriber: AppleSpeechTranscriber?
+  
+  // Post-processing pipeline (Issue #26)
+  private var postProcessingPipeline: PostProcessingPipeline?
 
   override init() {
     let enabled = UserDefaults.standard.bool(forKey: SettingsKeys.persistHistoryEnabled)
@@ -64,6 +67,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } catch {
       transcriber = nil
     }
+    
+    // Setup post-processing pipeline (Issue #26)
+    setupPostProcessingPipeline()
 
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.statusItem = statusItem
@@ -293,9 +299,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       Task { [weak self] in
         guard let self else { return }
         do {
-          let text = try await self.stopTranscriptionAndInsert()
-          if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            self.historyStore.append(mode: .insert, text: text)
+          let (finalText, rawText, processingResult) = try await self.stopTranscriptionAndInsert()
+          if !finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // Convert ProcessingResult steps to ProcessingStepRecord for history
+            let stepRecords = processingResult?.steps.map { step in
+              ProcessingStepRecord(
+                processorName: step.processorName,
+                duration: step.duration,
+                success: step.success
+              )
+            }
+            
+            self.historyStore.append(
+              mode: .insert,
+              text: finalText,
+              rawText: rawText,
+              processingSteps: stepRecords
+            )
           }
           self.appState.status = .idle
         } catch {
@@ -417,6 +437,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     _ = mode
 #endif
   }
+  
+  // MARK: - Post-Processing Setup (Issue #26)
+  
+  private func setupPostProcessingPipeline() {
+    let config = PostProcessingConfig.load()
+    
+    guard config.enabled else {
+      postProcessingPipeline = nil
+      return
+    }
+    
+    var processors: [PostProcessor] = []
+    
+    if config.cleanerEnabled {
+      processors.append(TextCleaner(rules: config.cleanerRules))
+    }
+    
+    // v1 LLM refiner not implemented yet
+    // if config.refinerEnabled, let apiClient = createLLMAPIClient(model: config.refinerModel) {
+    //   processors.append(LLMRefiner(apiClient: apiClient))
+    // }
+    
+    postProcessingPipeline = PostProcessingPipeline(
+      processors: processors,
+      fallbackBehavior: config.fallbackBehavior
+    )
+  }
 
   private func startTranscription() throws {
     guard let transcriber else {
@@ -425,20 +472,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     try transcriber.start()
   }
 
-  private func stopTranscriptionAndInsert() async throws -> String {
+  private func stopTranscriptionAndInsert() async throws -> (finalText: String, rawText: String?, processingResult: ProcessingResult?) {
     guard let transcriber else {
       throw NSError(domain: "AIVoiceKeyboard", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
     }
 
-    let text = try await transcriber.stop(timeoutSeconds: 2.0)
+    let rawText = try await transcriber.stop(timeoutSeconds: 2.0)
+    
+    // Apply post-processing if enabled (Issue #26)
+    let finalText: String
+    let processingResult: ProcessingResult?
+    
+    if let pipeline = postProcessingPipeline {
+      do {
+        let result = try await pipeline.process(text: rawText, timeout: 5.0)
+        finalText = result.finalText
+        processingResult = result
+      } catch {
+        // Fallback to raw text if post-processing fails
+        finalText = rawText
+        processingResult = nil
+      }
+    } else {
+      finalText = rawText
+      processingResult = nil
+    }
 
     // Capture a fresh snapshot so the user can restore whatever they had right before this insert.
     // (We intentionally do not auto-restore in v0.1.)
     lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
     rebuildHistoryMenu()
 
-    try inserter.insert(text: text)
-    return text
+    try inserter.insert(text: finalText)
+    
+    // Return both raw and final text for history tracking
+    return (finalText, processingResult != nil ? rawText : nil, processingResult)
   }
 
   @objc private func setStateFromMenu(_ sender: NSMenuItem) {
@@ -664,16 +732,33 @@ enum HistoryMode: String, Codable, Sendable {
   case edit
 }
 
+struct ProcessingStepRecord: Codable, Sendable {
+  let processorName: String
+  let duration: TimeInterval
+  let success: Bool
+}
+
 struct HistoryEntry: Identifiable, Codable, Sendable {
   let id: UUID
   let mode: HistoryMode
-  let text: String
+  let text: String  // Final inserted text
+  let rawText: String?  // Original transcription (if post-processing was applied)
+  let processingSteps: [ProcessingStepRecord]?  // Optional processing metadata
   let createdAt: Date
 
-  init(id: UUID = UUID(), mode: HistoryMode, text: String, createdAt: Date = Date()) {
+  init(
+    id: UUID = UUID(),
+    mode: HistoryMode,
+    text: String,
+    rawText: String? = nil,
+    processingSteps: [ProcessingStepRecord]? = nil,
+    createdAt: Date = Date()
+  ) {
     self.id = id
     self.mode = mode
     self.text = text
+    self.rawText = rawText
+    self.processingSteps = processingSteps
     self.createdAt = createdAt
   }
 
@@ -724,8 +809,18 @@ final class HistoryStore: ObservableObject {
     }
   }
 
-  func append(mode: HistoryMode, text: String) {
-    let entry = HistoryEntry(mode: mode, text: text)
+  func append(
+    mode: HistoryMode,
+    text: String,
+    rawText: String? = nil,
+    processingSteps: [ProcessingStepRecord]? = nil
+  ) {
+    let entry = HistoryEntry(
+      mode: mode,
+      text: text,
+      rawText: rawText,
+      processingSteps: processingSteps
+    )
     entries.insert(entry, at: 0)
     if entries.count > maxEntries {
       entries.removeLast(entries.count - maxEntries)
