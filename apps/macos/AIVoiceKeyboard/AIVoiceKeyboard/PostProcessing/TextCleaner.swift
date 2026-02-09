@@ -45,9 +45,10 @@ final class TextCleaner: PostProcessor {
         options: .regularExpression
       )
       
-      // Ensure space after punctuation (except at end)
+      // Ensure space after punctuation (only when followed by a letter)
+      // This avoids breaking numbers (3.14), URLs (example.com), times (10:30), etc.
       result = result.replacingOccurrences(
-        of: "([.,!?;:])([^\\s])",
+        of: "([.,!?;:])([a-zA-Z])",
         with: "$1 $2",
         options: .regularExpression
       )
