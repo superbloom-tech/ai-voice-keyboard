@@ -442,59 +442,71 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   
   private func setupPostProcessingPipeline() {
     let config = PostProcessingConfig.load()
-    
+    NSLog("[PostProcessing][Setup] Config loaded — enabled: %@, cleaner: %@, refiner: %@, provider: %@, model: %@",
+          config.enabled ? "YES" : "NO",
+          config.cleanerEnabled ? "YES" : "NO",
+          config.refinerEnabled ? "YES" : "NO",
+          config.refinerProvider?.rawValue ?? "nil",
+          config.refinerModel ?? "nil")
+
     guard config.enabled else {
+      NSLog("[PostProcessing][Setup] Pipeline disabled, skipping")
       postProcessingPipeline = nil
       return
     }
-    
+
     var processors: [PostProcessor] = []
-    
+
     if config.cleanerEnabled {
       processors.append(TextCleaner(rules: config.cleanerRules))
+      NSLog("[PostProcessing][Setup] TextCleaner added (rules: %d)", config.cleanerRulesRawValue)
     }
-    
+
     // v1 LLM refiner (Issue #33)
     if config.refinerEnabled, let apiClient = createLLMAPIClient(config: config) {
       processors.append(LLMRefiner(apiClient: apiClient))
+      NSLog("[PostProcessing][Setup] LLMRefiner added")
+    } else if config.refinerEnabled {
+      NSLog("[PostProcessing][Setup] LLMRefiner enabled but API client creation failed")
     }
-    
+
     postProcessingPipeline = PostProcessingPipeline(
       processors: processors,
       fallbackBehavior: config.fallbackBehavior
     )
+    NSLog("[PostProcessing][Setup] Pipeline ready with %d processor(s)", processors.count)
   }
   
   private func createLLMAPIClient(config: PostProcessingConfig) -> LLMAPIClient? {
     guard let provider = config.refinerProvider,
           let model = config.refinerModel else {
-      NSLog("Failed to create LLM API client: missing provider or model")
+      NSLog("[PostProcessing][Setup] Cannot create API client: missing provider or model")
       return nil
     }
-    
+
     // Try to load API key
     let apiKey: String
     do {
       guard let key = try config.loadLLMAPIKey() else {
-        NSLog("Failed to create LLM API client: API key not found in Keychain for provider '\(provider.rawValue)'")
+        NSLog("[PostProcessing][Setup] Cannot create API client: API key not found in Keychain for provider '%@'", provider.rawValue)
         return nil
       }
       apiKey = key
+      NSLog("[PostProcessing][Setup] API key loaded from Keychain (length: %d)", apiKey.count)
     } catch {
-      NSLog("Failed to create LLM API client: Keychain error - \(error.localizedDescription)")
+      NSLog("[PostProcessing][Setup] Cannot create API client: Keychain error — %@", error.localizedDescription)
       return nil
     }
-    
+
     switch provider {
     case .openai:
+      NSLog("[PostProcessing][Setup] Creating OpenAIClient — model: %@", model)
       return OpenAIClient(apiKey: apiKey, model: model)
     case .anthropic:
-      // TODO: Implement AnthropicClient
-      NSLog("Anthropic client not implemented yet")
+      NSLog("[PostProcessing][Setup] Anthropic client not implemented yet")
       return nil
     case .ollama:
-      // TODO: Implement OllamaClient
-      NSLog("Ollama client not implemented yet")
+      NSLog("[PostProcessing][Setup] Ollama client not implemented yet")
       return nil
     }
   }
@@ -512,26 +524,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let rawText = try await transcriber.stop(timeoutSeconds: 2.0)
-    
+    NSLog("[PostProcessing] Raw transcription: \"%@\" (length: %d)", rawText, rawText.count)
+
     // Apply post-processing if enabled (Issue #26)
     let finalText: String
     let processingResult: ProcessingResult?
-    
+
     if let pipeline = postProcessingPipeline {
       do {
         // Use configured timeout instead of hardcoded value
         let config = PostProcessingConfig.load()
         let timeout = config.refinerEnabled ? config.refinerTimeout : config.cleanerTimeout
+        NSLog("[PostProcessing] Invoking pipeline with timeout: %.1fs", timeout)
         let result = try await pipeline.process(text: rawText, timeout: timeout)
         finalText = result.finalText
         processingResult = result
+        NSLog("[PostProcessing] Final text: \"%@\" (length: %d)", finalText, finalText.count)
       } catch {
         // Fallback to raw text if post-processing fails
-        NSLog("Post-processing failed: \(error.localizedDescription)")
+        NSLog("[PostProcessing] Pipeline threw error, using raw text: %@", error.localizedDescription)
         finalText = rawText
         processingResult = nil
       }
     } else {
+      NSLog("[PostProcessing] No pipeline configured, using raw text")
       finalText = rawText
       processingResult = nil
     }

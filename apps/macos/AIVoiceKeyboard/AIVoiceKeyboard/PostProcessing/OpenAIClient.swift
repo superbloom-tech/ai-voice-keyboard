@@ -17,29 +17,35 @@ final class OpenAIClient: LLMAPIClient {
   }
   
   func refine(text: String, systemPrompt: String, timeout: TimeInterval) async throws -> String {
+    NSLog("[PostProcessing][OpenAIClient] Starting refine request — model: %@, baseURL: %@, timeout: %.1fs, text length: %d",
+          model, baseURL.absoluteString, timeout, text.count)
     do {
       // Build request
       let request = try buildRequest(text: text, systemPrompt: systemPrompt)
+      NSLog("[PostProcessing][OpenAIClient] Request built — URL: %@", request.url?.absoluteString ?? "nil")
       
       // Send request with timeout
       let (data, response) = try await URLSession.shared.data(for: request, timeout: timeout)
       
       // Parse response
-      return try parseResponse(data: data, response: response)
+      let result = try parseResponse(data: data, response: response)
+      NSLog("[PostProcessing][OpenAIClient] Refine succeeded — result length: %d", result.count)
+      return result
     } catch let error as LLMAPIError {
-      // Already an LLMAPIError, just rethrow
+      NSLog("[PostProcessing][OpenAIClient] LLMAPIError: %@", String(describing: error))
       throw error
     } catch is CancellationError {
-      // Task was cancelled
+      NSLog("[PostProcessing][OpenAIClient] Request cancelled")
       throw LLMAPIError.cancelled
     } catch let error as URLError {
-      // Network error
       if error.code == .timedOut {
+        NSLog("[PostProcessing][OpenAIClient] Request timed out")
         throw LLMAPIError.timeout
       }
+      NSLog("[PostProcessing][OpenAIClient] Network error: %@", error.localizedDescription)
       throw LLMAPIError.networkError(underlying: error)
     } catch {
-      // Other errors (e.g., JSON serialization)
+      NSLog("[PostProcessing][OpenAIClient] Unexpected error: %@", error.localizedDescription)
       throw LLMAPIError.invalidResponse
     }
   }
@@ -70,8 +76,11 @@ final class OpenAIClient: LLMAPIClient {
   private func parseResponse(data: Data, response: URLResponse) throws -> String {
     // Check HTTP status code
     guard let httpResponse = response as? HTTPURLResponse else {
+      NSLog("[PostProcessing][OpenAIClient] Response is not HTTPURLResponse")
       throw LLMAPIError.invalidResponse
     }
+    
+    NSLog("[PostProcessing][OpenAIClient] HTTP status: %d", httpResponse.statusCode)
     
     // Map specific status codes
     switch httpResponse.statusCode {
@@ -79,11 +88,12 @@ final class OpenAIClient: LLMAPIClient {
       // Success, continue parsing
       break
     case 401, 403:
-      // Invalid API key
+      NSLog("[PostProcessing][OpenAIClient] Invalid API key (HTTP %d)", httpResponse.statusCode)
       throw LLMAPIError.invalidAPIKey
     default:
       // Other API errors
       let errorMessage = try? parseErrorMessage(from: data)
+      NSLog("[PostProcessing][OpenAIClient] API error (HTTP %d): %@", httpResponse.statusCode, errorMessage ?? "Unknown error")
       throw LLMAPIError.apiError(
         statusCode: httpResponse.statusCode,
         message: errorMessage ?? "Unknown error"
