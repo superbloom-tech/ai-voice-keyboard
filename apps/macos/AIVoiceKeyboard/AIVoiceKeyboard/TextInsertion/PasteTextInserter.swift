@@ -34,16 +34,24 @@ final class PasteTextInserter: TextInserter {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { throw PasteInsertError.emptyText }
 
+    let pb = NSPasteboard.general
+
+    // Snapshot before we mutate the clipboard.
+    // IMPORTANT: do not blindly restore if the user changed the clipboard during the delay.
     let snapshot = PasteboardSnapshot.capture(from: .general)
 
-    let pb = NSPasteboard.general
     pb.clearContents()
     pb.setString(trimmed, forType: .string)
+
+    // Record the change count after we write our paste payload.
+    let expectedChangeCount = pb.changeCount
 
     try postPasteKeyChord()
 
     // Give the target app a moment to consume the clipboard before restoring.
     DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelaySeconds) {
+      // Only restore if the clipboard is still exactly what we last wrote.
+      guard pb.changeCount == expectedChangeCount else { return }
       _ = snapshot.restore(to: .general)
     }
   }

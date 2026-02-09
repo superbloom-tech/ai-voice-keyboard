@@ -123,6 +123,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       keyEquivalent: ""
     )
     toggleEdit.target = self
+#if !DEBUG
+    toggleEdit.title = "Toggle Edit Recording (Coming soon)"
+    toggleEdit.isEnabled = false
+#endif
     menu.addItem(toggleEdit)
 
     menu.addItem(.separator())
@@ -291,7 +295,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           self.appState.status = .idle
         } catch {
           self.appState.status = .error
-          self.appState.permissionWarningMessage = error.localizedDescription
+          self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
         }
       }
       return
@@ -306,7 +310,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           self.appState.status = .recordingInsert
         } catch {
           self.appState.status = .error
-          self.appState.permissionWarningMessage = error.localizedDescription
+          self.appState.permissionWarningMessage = "Insert failed: \(error.localizedDescription)"
         }
       }
     }

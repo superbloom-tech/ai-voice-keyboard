@@ -67,7 +67,10 @@ final class AppleSpeechTranscriber {
 
     input.removeTap(onBus: 0)
     input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-      self?.request?.append(buffer)
+      guard let self else { return }
+      guard !self.isStopping else { return }
+      guard let request = self.request else { return }
+      request.append(buffer)
     }
 
     audioEngine.prepare()
