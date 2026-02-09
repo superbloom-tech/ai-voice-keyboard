@@ -1,11 +1,12 @@
 import AppKit
+import Carbon.HIToolbox
 import Foundation
 
 /// v0.1 inserter: paste via clipboard + Cmd+V.
 ///
 /// Tradeoffs:
 /// - Fast to ship and works in many apps.
-/// - Temporarily mutates clipboard; we restore best-effort.
+/// - Mutates clipboard (intentionally kept as transcript in v0.1; user can restore via menu).
 final class PasteTextInserter: TextInserter {
   enum PasteInsertError: LocalizedError {
     case emptyText
@@ -42,8 +43,7 @@ final class PasteTextInserter: TextInserter {
   }
 
   private func postPasteKeyChord() throws {
-    // kVK_ANSI_V = 0x09 on Apple US keyboards.
-    let virtualKeyV: CGKeyCode = 9
+    let virtualKeyV: CGKeyCode = CGKeyCode(kVK_ANSI_V)
 
     guard let source = CGEventSource(stateID: .hidSystemState) else {
       throw PasteInsertError.eventSourceUnavailable

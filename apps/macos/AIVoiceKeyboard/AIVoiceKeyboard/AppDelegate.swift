@@ -175,7 +175,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       case .toggleInsert:
         self.toggleInsertRecording()
       case .toggleEdit:
+#if DEBUG
         self.toggleEditRecording()
+#else
+        // Edit is not implemented yet; keep hotkey consistent with the disabled menu item.
+        self.appState.permissionWarningMessage = "Edit mode coming soon"
+#endif
       }
     }
 
@@ -355,7 +360,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    appState.permissionWarningMessage = nil
+    // Accessibility is required for reliably pasting into other apps via synthetic Cmd+V.
+    // If it's not enabled, we still allow recording/transcription but expect a clipboard-only fallback.
+    if !PermissionChecks.status(for: .accessibility).isSatisfied {
+      appState.permissionWarningMessage = "Accessibility not enabled: will copy to clipboard; enable Accessibility for auto-insert"
+    } else {
+      appState.permissionWarningMessage = nil
+    }
+
     onSuccess()
   }
 
@@ -414,13 +426,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let text = try await transcriber.stop(timeoutSeconds: 2.0)
 
-    // Keep an explicit snapshot so the user can restore the original clipboard from the menu.
-    // This is intentionally not auto-restored in v0.1 (see PasteTextInserter), because
-    // synthetic Cmd+V can be blocked in some environments.
-    if lastClipboardSnapshot == nil {
-      lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
-      rebuildHistoryMenu()
-    }
+    // Capture a fresh snapshot so the user can restore whatever they had right before this insert.
+    // (We intentionally do not auto-restore in v0.1.)
+    lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
+    rebuildHistoryMenu()
 
     try inserter.insert(text: text)
     return text
@@ -443,10 +452,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     guard let id = sender.representedObject as? UUID else { return }
     guard let entry = historyStore.entries.first(where: { $0.id == id }) else { return }
 
-    // Keep the original clipboard content until the user explicitly restores it.
-    if lastClipboardSnapshot == nil {
-      lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
-    }
+    // Capture a fresh snapshot so Restore maps to the last user clipboard state.
+    lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
 
     let pb = NSPasteboard.general
     pb.clearContents()
