@@ -180,6 +180,7 @@ actor WhisperCLISTTEngine: STTEngine {
     let process = Process()
     process.executableURL = executableURL
     process.arguments = args
+    process.environment = resolvedSubprocessEnvironment()
 
     let stdout = Pipe()
     let stderr = Pipe()
@@ -299,6 +300,36 @@ actor WhisperCLISTTEngine: STTEngine {
 
     // Fallback: rely on PATH resolution (e.g. in CI/dev shells).
     return (URL(fileURLWithPath: "/usr/bin/env"), ["whisper"])
+  }
+
+  private func resolvedSubprocessEnvironment() -> [String: String] {
+    // GUI apps don't reliably inherit user shell PATH, and `openai-whisper` shells out to `ffmpeg`.
+    // Ensure Homebrew install locations are on PATH so whisper can find ffmpeg.
+    var env = ProcessInfo.processInfo.environment
+
+    let defaultSystemPath = "/usr/bin:/bin:/usr/sbin:/sbin"
+    let existingPath = env["PATH"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let basePath = (existingPath?.isEmpty == false) ? existingPath! : defaultSystemPath
+
+    let extraPaths = [
+      "/opt/homebrew/bin",
+      "/usr/local/bin"
+    ]
+
+    // Preserve ordering while de-duplicating.
+    var seen: Set<String> = []
+    var finalParts: [String] = []
+
+    for part in (extraPaths + basePath.split(separator: ":").map(String.init)) {
+      let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !trimmed.isEmpty else { continue }
+      guard !seen.contains(trimmed) else { continue }
+      seen.insert(trimmed)
+      finalParts.append(trimmed)
+    }
+
+    env["PATH"] = finalParts.joined(separator: ":")
+    return env
   }
 
   private struct ProcessRunResult: Sendable {
