@@ -6,6 +6,8 @@ actor OpenAICompatibleSTTEngine: STTEngine {
   enum EngineError: LocalizedError {
     case alreadyRunning
     case recorderFailed
+    case recordingFileNotFound
+    case recordingEmpty
     case apiKeyMissing(apiKeyId: String)
     case httpError(statusCode: Int, body: String)
     case invalidResponse
@@ -17,6 +19,10 @@ actor OpenAICompatibleSTTEngine: STTEngine {
         return "STT session already running"
       case .recorderFailed:
         return "Failed to start audio recording"
+      case .recordingFileNotFound:
+        return "Recording file not found. Check microphone input/device and retry."
+      case .recordingEmpty:
+        return "No audio captured. Check microphone input/device and retry."
       case .apiKeyMissing(let apiKeyId):
         return "Missing STT API key for id: \(apiKeyId). Configure it in Settings."
       case .httpError(let statusCode, let body):
@@ -67,7 +73,8 @@ actor OpenAICompatibleSTTEngine: STTEngine {
 
     let settings: [String: Any] = [
       AVFormatIDKey: kAudioFormatMPEG4AAC,
-      AVSampleRateKey: 16_000,
+      // Use a common sample rate for better device compatibility; the server will resample as needed.
+      AVSampleRateKey: 44_100,
       AVNumberOfChannelsKey: 1,
       AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ]
@@ -142,6 +149,8 @@ actor OpenAICompatibleSTTEngine: STTEngine {
   }
 
   private func transcribe(audioURL: URL, locale: Locale) async throws -> String {
+    _ = try await waitForRecordingBytes(audioURL: audioURL)
+
     let apiKeyId = configuration.apiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
     guard let apiKey = try STTKeychain.load(apiKeyId: apiKeyId),
           !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -197,6 +206,22 @@ actor OpenAICompatibleSTTEngine: STTEngine {
     return decoded.text
   }
 
+  private func waitForRecordingBytes(audioURL: URL) async throws -> Int64 {
+    let fm = FileManager.default
+    guard fm.fileExists(atPath: audioURL.path) else {
+      throw EngineError.recordingFileNotFound
+    }
+
+    var lastSize: Int64 = 0
+    for _ in 0..<10 {
+      lastSize = (try? fm.attributesOfItem(atPath: audioURL.path)[.size] as? NSNumber)?.int64Value ?? 0
+      if lastSize > 0 { return lastSize }
+      try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+    }
+
+    throw EngineError.recordingEmpty
+  }
+
   private enum MultipartWriter {
     static func write(
       to url: URL,
@@ -242,4 +267,3 @@ actor OpenAICompatibleSTTEngine: STTEngine {
     }
   }
 }
-
