@@ -458,7 +458,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   
   private func setupPostProcessingPipeline() {
     let config = PostProcessingConfig.load()
-    NSLog("[PostProcessing][Setup] Config loaded — enabled: %@, cleaner: %@, profiles: %d, selected: %@, refiner: %@, format: %@, preset: %@, baseURL: %@, model: %@",
+    NSLog("[PostProcessing][Setup] Config loaded — enabled: %@, cleaner: %@, profiles: %ld, selected: %@, refiner: %@, format: %@, preset: %@, baseURL: %@, model: %@",
           config.enabled ? "YES" : "NO",
           config.cleanerEnabled ? "YES" : "NO",
           config.refinerProfiles.count,

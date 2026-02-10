@@ -18,6 +18,19 @@ final class PostProcessingSettingsModel: ObservableObject {
   init(config: PostProcessingConfig = .load()) {
     self.config = config
 
+    // Clear UI-only API key state when switching profiles to avoid showing stale status/messages.
+    $config
+      .map(\.selectedRefinerProfileId)
+      .removeDuplicates()
+      .dropFirst()
+      .sink { [weak self] _ in
+        guard let self else { return }
+        self.apiKeyDraft = ""
+        self.apiKeyMessage = nil
+        self.apiKeyMessageIsError = false
+      }
+      .store(in: &cancellables)
+
     // Avoid rebuilding the pipeline on every keystroke while editing Base URL / Model.
     $config
       .dropFirst()
@@ -34,7 +47,7 @@ final class PostProcessingSettingsModel: ObservableObject {
 
   func updateSelectedProfileName(_ name: String) {
     let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-    let final = trimmed.isEmpty ? "Profile" : name
+    let final = trimmed.isEmpty ? "Profile" : trimmed
     if let idx = config.refinerProfiles.firstIndex(where: { $0.id == config.selectedRefinerProfileId }) {
       config.refinerProfiles[idx].name = final
     }
