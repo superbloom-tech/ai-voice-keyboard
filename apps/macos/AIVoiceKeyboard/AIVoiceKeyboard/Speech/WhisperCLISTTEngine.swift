@@ -78,10 +78,16 @@ actor WhisperCLISTTEngine: STTEngine {
 
     let recordingURL = dir.appendingPathComponent("recording.m4a", isDirectory: false)
 
+    let sampleRate = DefaultAudioInputDevice.nominalSampleRate() ?? 44_100
+    if let deviceName = DefaultAudioInputDevice.name() {
+      NSLog("[WhisperCLI] Using default input: %@ (nominal sampleRate: %.0f Hz)", deviceName, sampleRate)
+    }
+
     let settings: [String: Any] = [
       AVFormatIDKey: kAudioFormatMPEG4AAC,
-      // Use a common sample rate for better device compatibility; Whisper will resample internally.
-      AVSampleRateKey: 44_100,
+      // Match the default input device's nominal sample rate when possible; Bluetooth mics (e.g. AirPods)
+      // often run at 24kHz and can fail to start if forced to an unsupported rate.
+      AVSampleRateKey: sampleRate,
       AVNumberOfChannelsKey: 1,
       AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ]

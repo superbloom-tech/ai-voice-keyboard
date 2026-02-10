@@ -71,10 +71,15 @@ actor OpenAICompatibleSTTEngine: STTEngine {
 
     let recordingURL = dir.appendingPathComponent("recording.m4a", isDirectory: false)
 
+    let sampleRate = DefaultAudioInputDevice.nominalSampleRate() ?? 44_100
+    if let deviceName = DefaultAudioInputDevice.name() {
+      NSLog("[OpenAICompatibleSTT] Using default input: %@ (nominal sampleRate: %.0f Hz)", deviceName, sampleRate)
+    }
+
     let settings: [String: Any] = [
       AVFormatIDKey: kAudioFormatMPEG4AAC,
-      // Use a common sample rate for better device compatibility; the server will resample as needed.
-      AVSampleRateKey: 44_100,
+      // Match the default input device's nominal sample rate when possible.
+      AVSampleRateKey: sampleRate,
       AVNumberOfChannelsKey: 1,
       AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ]

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C9D51D5C7492C2584BE1123F /* DefaultAudioInputDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706651DF93679C056AE23C14 /* DefaultAudioInputDevice.swift */; };
 		00B4A31C81B0C9C76C74C9D9 /* WhisperCLISTTEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C2FADFE32B3DFF12D20C5A /* WhisperCLISTTEngine.swift */; };
 		12131F0C60E4A6F5853673F9 /* LLMEndpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9993535E9822B4EE23C47E /* LLMEndpointTests.swift */; };
 		13D1CD53938051021D06AEDE /* LLMAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFFC5BF16D58272ABD55CBA /* LLMAPIClient.swift */; };
@@ -71,6 +72,7 @@
 		332B2285BAD174EB5D4D1D48 /* TextCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleaner.swift; sourceTree = "<group>"; };
 		34D5705366A44370DF4CB297 /* LLMAPIClientFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMAPIClientFactory.swift; sourceTree = "<group>"; };
 		54F11769D72E2FB09C9B78D8 /* TextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInserter.swift; sourceTree = "<group>"; };
+		706651DF93679C056AE23C14 /* DefaultAudioInputDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAudioInputDevice.swift; sourceTree = "<group>"; };
 		6141A2C50B788192D5E99F74 /* AppleSpeechSTTEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechSTTEngine.swift; sourceTree = "<group>"; };
 		61C2FADFE32B3DFF12D20C5A /* WhisperCLISTTEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCLISTTEngine.swift; sourceTree = "<group>"; };
 		6691FBECAED7C1415C87D00E /* PostProcessingSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingSettingsModel.swift; sourceTree = "<group>"; };
@@ -123,6 +125,7 @@
 			isa = PBXGroup;
 			children = (
 				6141A2C50B788192D5E99F74 /* AppleSpeechSTTEngine.swift */,
+				706651DF93679C056AE23C14 /* DefaultAudioInputDevice.swift */,
 				2D8CFBF6F3EFAC99E33C20F5 /* OpenAICompatibleSTTEngine.swift */,
 				9525CFA467368EA8BE495BA7 /* PushToTalkSTTSession.swift */,
 				7031966727210D33FE0B1309 /* STTEngineFactory.swift */,
@@ -334,6 +337,7 @@
 				75F6325B4F78629EEC22AA4A /* AnthropicClient.swift in Sources */,
 				2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */,
 				AC7C4BCDEA414C6D20CFA9C2 /* AppleSpeechSTTEngine.swift in Sources */,
+				C9D51D5C7492C2584BE1123F /* DefaultAudioInputDevice.swift in Sources */,
 				F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */,
 				1FF5B48B7C83D13F18CA9776 /* KeychainManager.swift in Sources */,
 				13D1CD53938051021D06AEDE /* LLMAPIClient.swift in Sources */,
