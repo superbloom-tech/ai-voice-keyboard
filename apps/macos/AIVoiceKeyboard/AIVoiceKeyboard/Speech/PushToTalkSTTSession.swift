@@ -40,6 +40,9 @@ actor PushToTalkSTTSession {
     finalText = nil
     completionError = nil
 
+    NSLog("[STTSession] Starting session (generation: %d, engine: %@, locale: %@)",
+          gen, engine.id, locale.identifier)
+
     let stream = try await engine.streamTranscripts(locale: locale)
     self.stream = stream
 
@@ -53,10 +56,13 @@ actor PushToTalkSTTSession {
         await self.handleCompletion(error: error, generation: gen)
       }
     }
+    NSLog("[STTSession] Consumer task started")
   }
 
   func stop(timeoutSeconds: Double) async throws -> String {
     guard let stream else { throw SessionError.notRunning }
+
+    NSLog("[STTSession] Stopping session (timeout: %.1fs)", timeoutSeconds)
 
     let task = consumerTask
     await stream.cancel()
@@ -64,12 +70,19 @@ actor PushToTalkSTTSession {
     if let task {
       let finished = await waitForTask(task, timeoutSeconds: timeoutSeconds)
       if !finished {
+        NSLog("[STTSession] WARNING: Consumer task did not finish within timeout, cancelling")
         task.cancel()
+      } else {
+        NSLog("[STTSession] Consumer task finished normally")
       }
     }
 
     let err = completionError
     let text = finalText ?? latestText
+    NSLog("[STTSession] Result — finalText: %@, latestText: \"%@\", error: %@",
+          finalText != nil ? "\"\(finalText!)\"" : "nil",
+          latestText,
+          err?.localizedDescription ?? "nil")
 
     // Reset for next run.
     self.stream = nil
@@ -82,12 +95,20 @@ actor PushToTalkSTTSession {
     if let err { throw err }
 
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { throw SessionError.noResult }
+    guard !trimmed.isEmpty else {
+      NSLog("[STTSession] ERROR: No result (text empty after trimming)")
+      throw SessionError.noResult
+    }
+    NSLog("[STTSession] Returning text: \"%@\" (length: %d)", text, text.count)
     return text
   }
 
   private func handleTranscript(_ transcript: Transcript, generation: Int) {
-    guard activeGeneration == generation else { return }
+    guard activeGeneration == generation else {
+      NSLog("[STTSession] Ignoring transcript from stale generation %d (active: %d)", generation, activeGeneration ?? -1)
+      return
+    }
+    NSLog("[STTSession] Received transcript (isFinal: %d): \"%@\"", transcript.isFinal ? 1 : 0, transcript.text)
     latestText = transcript.text
     if transcript.isFinal {
       finalText = transcript.text
@@ -96,6 +117,11 @@ actor PushToTalkSTTSession {
 
   private func handleCompletion(error: Error?, generation: Int) {
     guard activeGeneration == generation else { return }
+    if let error {
+      NSLog("[STTSession] Stream completed with error: %@", error.localizedDescription)
+    } else {
+      NSLog("[STTSession] Stream completed normally")
+    }
     completionError = error
   }
 

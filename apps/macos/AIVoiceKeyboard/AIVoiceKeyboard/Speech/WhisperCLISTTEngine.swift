@@ -60,11 +60,18 @@ actor WhisperCLISTTEngine: STTEngine {
 
   func streamTranscripts(locale: Locale) async throws -> STTTranscriptStream {
     _ = locale
-    guard recorder == nil, continuation == nil, !isStopping else { throw EngineError.alreadyRunning }
+    guard recorder == nil, continuation == nil, !isStopping else {
+      NSLog("[WhisperSTT] streamTranscripts called but already running (recorder=%@, continuation=%@, isStopping=%d)",
+            recorder != nil ? "set" : "nil", continuation != nil ? "set" : "nil", isStopping ? 1 : 0)
+      throw EngineError.alreadyRunning
+    }
+
+    NSLog("[WhisperSTT] Starting new session")
 
     let dir = FileManager.default.temporaryDirectory
       .appendingPathComponent("avkb-stt-whisper-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    NSLog("[WhisperSTT] Session directory: %@", dir.path)
 
     let recordingURL = dir.appendingPathComponent("recording.m4a", isDirectory: false)
 
@@ -75,9 +82,17 @@ actor WhisperCLISTTEngine: STTEngine {
       AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ]
 
+    NSLog("[WhisperSTT] Recording settings: format=AAC, sampleRate=16000, channels=1, quality=high")
+    NSLog("[WhisperSTT] Recording file: %@", recordingURL.path)
+
     let recorder = try AVAudioRecorder(url: recordingURL, settings: settings)
     recorder.prepareToRecord()
-    guard recorder.record() else { throw EngineError.recorderFailed }
+    guard recorder.record() else {
+      NSLog("[WhisperSTT] ERROR: recorder.record() returned false")
+      throw EngineError.recorderFailed
+    }
+
+    NSLog("[WhisperSTT] Recording started successfully")
 
     self.sessionDir = dir
     self.recordingURL = recordingURL
@@ -98,8 +113,12 @@ actor WhisperCLISTTEngine: STTEngine {
   }
 
   private func stopAndTranscribe() async {
-    guard !isStopping else { return }
+    guard !isStopping else {
+      NSLog("[WhisperSTT] stopAndTranscribe called but already stopping, skipping")
+      return
+    }
     isStopping = true
+    NSLog("[WhisperSTT] Stopping recording and starting transcription")
 
     let cont = continuation
     continuation = nil
@@ -109,10 +128,21 @@ actor WhisperCLISTTEngine: STTEngine {
 
     recorder?.stop()
     recorder = nil
+    NSLog("[WhisperSTT] Recorder stopped")
+
+    // Log audio file size
+    if let audioURL, FileManager.default.fileExists(atPath: audioURL.path) {
+      let attrs = try? FileManager.default.attributesOfItem(atPath: audioURL.path)
+      let fileSize = attrs?[.size] as? UInt64 ?? 0
+      NSLog("[WhisperSTT] Audio file: %@ (size: %llu bytes)", audioURL.path, fileSize)
+    } else {
+      NSLog("[WhisperSTT] WARNING: Audio file does not exist at expected path: %@", audioURL?.path ?? "nil")
+    }
 
     defer {
       // Best-effort cleanup. Keep failures silent.
       if let dir {
+        NSLog("[WhisperSTT] Cleaning up session directory: %@", dir.path)
         try? FileManager.default.removeItem(at: dir)
       }
       sessionDir = nil
@@ -120,8 +150,12 @@ actor WhisperCLISTTEngine: STTEngine {
       isStopping = false
     }
 
-    guard let cont else { return }
+    guard let cont else {
+      NSLog("[WhisperSTT] WARNING: No continuation available, cannot deliver result")
+      return
+    }
     guard let dir, let audioURL else {
+      NSLog("[WhisperSTT] ERROR: Missing session dir or audio URL")
       cont.finish(throwing: EngineError.noResult)
       return
     }
@@ -129,14 +163,18 @@ actor WhisperCLISTTEngine: STTEngine {
     do {
       let text = try await transcribe(audioURL: audioURL, workingDirectory: dir)
       let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+      NSLog("[WhisperSTT] Transcription result: \"%@\" (trimmed length: %d)", trimmed, trimmed.count)
       guard !trimmed.isEmpty else {
+        NSLog("[WhisperSTT] ERROR: Transcription result is empty after trimming")
         cont.finish(throwing: EngineError.noResult)
         return
       }
 
       cont.yield(Transcript(text: text, isFinal: true))
       cont.finish()
+      NSLog("[WhisperSTT] Final transcript yielded successfully")
     } catch {
+      NSLog("[WhisperSTT] ERROR: Transcription failed: %@", error.localizedDescription)
       cont.finish(throwing: error)
     }
   }
@@ -148,7 +186,12 @@ actor WhisperCLISTTEngine: STTEngine {
     let model = configuration.model.trimmingCharacters(in: .whitespacesAndNewlines)
     let language = configuration.language?.trimmingCharacters(in: .whitespacesAndNewlines)
 
+    NSLog("[WhisperSTT] Configuration: model=%@, language=%@, timeout=%.1fs",
+          model, language ?? "(auto-detect)", configuration.inferenceTimeoutSeconds)
+
     let (executableURL, prependArgs) = resolveWhisperExecutable()
+    NSLog("[WhisperSTT] Resolved executable: %@ (prepend args: %@)",
+          executableURL.path, prependArgs.joined(separator: " "))
 
     var args: [String] = []
     args.append(contentsOf: prependArgs)
@@ -164,9 +207,24 @@ actor WhisperCLISTTEngine: STTEngine {
       args += ["--language", language]
     }
 
+    NSLog("[WhisperSTT] Full command: %@ %@", executableURL.path, args.joined(separator: " "))
+
     let process = Process()
     process.executableURL = executableURL
     process.arguments = args
+
+    // macOS GUI apps launched from Finder/Dock have a minimal PATH that
+    // does not include Homebrew directories. Whisper depends on ffmpeg
+    // being reachable via PATH, so we inject common Homebrew bin paths.
+    var env = ProcessInfo.processInfo.environment
+    let homebrewPaths = ["/opt/homebrew/bin", "/usr/local/bin"]
+    let currentPath = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+    let missingPaths = homebrewPaths.filter { !currentPath.contains($0) }
+    if !missingPaths.isEmpty {
+      env["PATH"] = (missingPaths + [currentPath]).joined(separator: ":")
+      NSLog("[WhisperSTT] Augmented PATH: %@", env["PATH"]!)
+    }
+    process.environment = env
 
     let stdout = Pipe()
     let stderr = Pipe()
@@ -174,25 +232,52 @@ actor WhisperCLISTTEngine: STTEngine {
     process.standardError = stderr
 
     let timeout = configuration.inferenceTimeoutSeconds
+    NSLog("[WhisperSTT] Launching whisper process (timeout: %.1fs)...", timeout)
+    let startTime = CFAbsoluteTimeGetCurrent()
     let result = try await runProcess(process, timeoutSeconds: timeout)
+    let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+
+    NSLog("[WhisperSTT] Process finished in %.2fs — exit code: %d", elapsed, result.exitCode)
+    if !result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      NSLog("[WhisperSTT] Process stdout:\n%@", result.stdout)
+    }
+    if !result.stderr.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      NSLog("[WhisperSTT] Process stderr:\n%@", result.stderr)
+    }
 
     guard result.exitCode == 0 else {
+      NSLog("[WhisperSTT] ERROR: Whisper process failed with exit code %d", result.exitCode)
       throw EngineError.processFailed(exitCode: result.exitCode, stderr: result.stderr)
+    }
+
+    // Whisper CLI may exit 0 but skip the file (e.g. when ffmpeg is missing).
+    // Detect this by checking stdout for the "Skipping" pattern.
+    if result.stdout.contains("Skipping") && result.stdout.contains("FileNotFoundError") {
+      NSLog("[WhisperSTT] ERROR: Whisper skipped the audio file (likely missing ffmpeg)")
+      throw EngineError.processFailed(exitCode: 0, stderr: "Whisper skipped the audio file: \(result.stdout)")
     }
 
     let baseName = audioURL.deletingPathExtension().lastPathComponent
     let outFile = outDir.appendingPathComponent("\(baseName).txt", isDirectory: false)
+    NSLog("[WhisperSTT] Expected output file: %@", outFile.path)
 
     guard FileManager.default.fileExists(atPath: outFile.path) else {
+      // List what files actually exist in outDir for debugging
+      let contents = (try? FileManager.default.contentsOfDirectory(atPath: outDir.path)) ?? []
+      NSLog("[WhisperSTT] ERROR: Output file not found. Files in output dir: %@", contents.joined(separator: ", "))
       throw EngineError.outputNotFound
     }
 
-    return try String(contentsOf: outFile, encoding: .utf8)
+    let outputText = try String(contentsOf: outFile, encoding: .utf8)
+    NSLog("[WhisperSTT] Output file content (%d bytes): \"%@\"",
+          outputText.utf8.count, outputText.trimmingCharacters(in: .whitespacesAndNewlines))
+    return outputText
   }
 
   private func resolveWhisperExecutable() -> (URL, [String]) {
     let trimmed = configuration.executablePath?.trimmingCharacters(in: .whitespacesAndNewlines)
     if let trimmed, !trimmed.isEmpty {
+      NSLog("[WhisperSTT] Using custom executable path: %@", trimmed)
       return (URL(fileURLWithPath: trimmed), [])
     }
 
@@ -203,11 +288,15 @@ actor WhisperCLISTTEngine: STTEngine {
 
     for path in candidates {
       if FileManager.default.isExecutableFile(atPath: path) {
+        NSLog("[WhisperSTT] Found whisper at: %@", path)
         return (URL(fileURLWithPath: path), [])
+      } else {
+        NSLog("[WhisperSTT] Candidate not found or not executable: %@", path)
       }
     }
 
     // Fallback: rely on PATH resolution (e.g. in CI/dev shells).
+    NSLog("[WhisperSTT] No direct candidate found, falling back to /usr/bin/env whisper")
     return (URL(fileURLWithPath: "/usr/bin/env"), ["whisper"])
   }
 
@@ -224,6 +313,7 @@ actor WhisperCLISTTEngine: STTEngine {
       }
       group.addTask {
         try await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+        NSLog("[WhisperSTT] ERROR: Process timed out after %.1fs", timeoutSeconds)
         throw EngineError.timedOut(seconds: timeoutSeconds)
       }
 
@@ -248,7 +338,9 @@ actor WhisperCLISTTEngine: STTEngine {
 
     do {
       try process.run()
+      NSLog("[WhisperSTT] Process launched (pid: %d)", process.processIdentifier)
     } catch {
+      NSLog("[WhisperSTT] ERROR: Failed to launch process: %@", error.localizedDescription)
       throw EngineError.whisperExecutableNotFound
     }
 
