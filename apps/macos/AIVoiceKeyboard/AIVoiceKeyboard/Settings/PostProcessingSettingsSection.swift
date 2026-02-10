@@ -56,6 +56,13 @@ struct PostProcessingSettingsSection: View {
     )
   }
 
+  private var profileNameBinding: Binding<String> {
+    Binding(
+      get: { model.selectedProfile?.name ?? "" },
+      set: { model.updateSelectedProfileName($0) }
+    )
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Toggle("Post-processing Enabled", isOn: $model.config.enabled)
@@ -85,6 +92,24 @@ struct PostProcessingSettingsSection: View {
 
       Text("LLM Refiner")
         .font(.headline)
+
+      HStack(spacing: 12) {
+        Picker("Profile", selection: $model.config.selectedRefinerProfileId) {
+          ForEach(model.config.refinerProfiles, id: \.id) { profile in
+            Text(profile.name).tag(profile.id)
+          }
+        }
+        .frame(maxWidth: 320)
+
+        Button("Add") { model.addProfile() }
+        Button("Duplicate") { model.duplicateSelectedProfile() }
+        Button("Delete") { model.deleteSelectedProfile() }
+          .disabled(model.config.refinerProfiles.count <= 1)
+
+        Spacer()
+      }
+
+      TextField("Profile name", text: profileNameBinding)
 
       Toggle("Enabled", isOn: $model.config.refinerEnabled)
 
@@ -125,7 +150,7 @@ struct PostProcessingSettingsSection: View {
           .font(.headline)
 
         let saved = model.config.hasLLMAPIKey()
-        Text("Status: \(saved ? "Saved" : "Not saved") (\(model.config.llmAPIKeyNamespace))")
+        Text("Status: \(saved ? "Saved" : "Not saved") (Profile: \(model.selectedProfile?.name ?? "Unknown"))")
           .font(.footnote)
           .foregroundStyle(saved ? .green : .secondary)
 

@@ -28,6 +28,80 @@ final class PostProcessingSettingsModel: ObservableObject {
       .store(in: &cancellables)
   }
 
+  var selectedProfile: RefinerProfile? {
+    config.selectedRefinerProfile
+  }
+
+  func updateSelectedProfileName(_ name: String) {
+    let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    let final = trimmed.isEmpty ? "Profile" : name
+    if let idx = config.refinerProfiles.firstIndex(where: { $0.id == config.selectedRefinerProfileId }) {
+      config.refinerProfiles[idx].name = final
+    }
+  }
+
+  func addProfile() {
+    let name = makeUniqueProfileName(base: "New Profile")
+    let profile = RefinerProfile(
+      name: name,
+      enabled: false,
+      providerFormat: .openAICompatible,
+      openAICompatiblePreset: .openai,
+      baseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
+      model: nil,
+      timeout: 2.0,
+      fallbackBehavior: .returnOriginal
+    )
+    config.refinerProfiles.append(profile)
+    config.selectedRefinerProfileId = profile.id
+    apiKeyDraft = ""
+    apiKeyMessage = nil
+  }
+
+  func duplicateSelectedProfile() {
+    guard let selected = selectedProfile else { return }
+
+    var copy = selected
+    copy.id = UUID()
+    copy.name = makeUniqueProfileName(base: "\(selected.name) Copy")
+    config.refinerProfiles.append(copy)
+    config.selectedRefinerProfileId = copy.id
+
+    // Best-effort copy API key to the new profile.
+    if let key = try? config.loadLLMAPIKey(profileId: selected.id),
+       !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      try? config.saveLLMAPIKey(key, profileId: copy.id)
+    }
+
+    apiKeyDraft = ""
+    apiKeyMessage = nil
+  }
+
+  func deleteSelectedProfile() {
+    guard config.refinerProfiles.count > 1 else { return }
+    let id = config.selectedRefinerProfileId
+
+    config.refinerProfiles.removeAll(where: { $0.id == id })
+    config.selectedRefinerProfileId = config.refinerProfiles[0].id
+
+    // Best-effort cleanup for the removed profile.
+    try? config.deleteLLMAPIKey(profileId: id)
+
+    apiKeyDraft = ""
+    apiKeyMessage = nil
+  }
+
+  private func makeUniqueProfileName(base: String) -> String {
+    let existing = Set(config.refinerProfiles.map { $0.name })
+    guard existing.contains(base) else { return base }
+    var i = 2
+    while true {
+      let candidate = "\(base) (\(i))"
+      if !existing.contains(candidate) { return candidate }
+      i += 1
+    }
+  }
+
   func applyBaseURLDefaultForPreset() {
     guard config.refinerProviderFormat == .openAICompatible else { return }
     switch config.refinerOpenAICompatiblePreset {
@@ -65,7 +139,7 @@ final class PostProcessingSettingsModel: ObservableObject {
       try config.saveLLMAPIKey(key)
       apiKeyDraft = ""
       apiKeyMessageIsError = false
-      apiKeyMessage = "API key saved (\(config.llmAPIKeyNamespace))."
+      apiKeyMessage = "API key saved for profile: \(selectedProfile?.name ?? "Unknown")."
     } catch {
       apiKeyMessageIsError = true
       apiKeyMessage = error.localizedDescription
@@ -77,7 +151,7 @@ final class PostProcessingSettingsModel: ObservableObject {
       try config.deleteLLMAPIKey()
       apiKeyDraft = ""
       apiKeyMessageIsError = false
-      apiKeyMessage = "API key deleted (\(config.llmAPIKeyNamespace))."
+      apiKeyMessage = "API key deleted for profile: \(selectedProfile?.name ?? "Unknown")."
     } catch {
       apiKeyMessageIsError = true
       apiKeyMessage = error.localizedDescription
@@ -119,4 +193,3 @@ final class PostProcessingSettingsModel: ObservableObject {
     }
   }
 }
-
