@@ -46,6 +46,18 @@ enum PermissionStatus: String, Sendable {
   }
 }
 
+extension PermissionStatus {
+  /// User-facing, localized status text. Accessibility is treated as a "trusted" setting.
+  func localizedText(for kind: PermissionKind) -> String {
+    if kind == .accessibility {
+      return isSatisfied
+        ? NSLocalizedString("permission.status.trusted", comment: "")
+        : NSLocalizedString("permission.status.not_trusted", comment: "")
+    }
+    return displayText
+  }
+}
+
 enum PermissionChecks {
   static func status(for kind: PermissionKind) -> PermissionStatus {
     switch kind {

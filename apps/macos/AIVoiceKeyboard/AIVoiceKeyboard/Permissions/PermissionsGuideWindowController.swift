@@ -4,6 +4,8 @@ import SwiftUI
 @MainActor
 final class PermissionsGuideWindowController {
   private var window: NSWindow?
+  // `NSWindow.delegate` is weak; keep a strong reference so close callbacks always fire.
+  private var windowDelegate: PermissionsGuideWindowDelegate?
 
   private let activationPolicyController: ActivationPolicyController
 
@@ -37,10 +39,13 @@ final class PermissionsGuideWindowController {
     window.isReleasedWhenClosed = false
 
     // Restore activation policy when the window closes.
-    window.delegate = PermissionsGuideWindowDelegate(onClose: { [weak self] in
+    let delegate = PermissionsGuideWindowDelegate(onClose: { [weak self] in
       self?.window = nil
+      self?.windowDelegate = nil
       self?.activationPolicyController.popRegular()
     })
+    windowDelegate = delegate
+    window.delegate = delegate
 
     self.window = window
     window.makeKeyAndOrderFront(nil as Any?)

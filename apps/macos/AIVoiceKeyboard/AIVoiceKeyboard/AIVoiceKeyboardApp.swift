@@ -244,12 +244,7 @@ private struct PermissionRow: View {
   }
 
   private var statusText: String {
-    if kind == .accessibility {
-      return status.isSatisfied
-        ? NSLocalizedString("permission.status.trusted", comment: "")
-        : NSLocalizedString("permission.status.not_trusted", comment: "")
-    }
-    return status.displayText
+    status.localizedText(for: kind)
   }
 }
 
