@@ -3,6 +3,26 @@ import Foundation
 import VoiceKeyboardCore
 
 actor WhisperCLISTTEngine: STTEngine {
+  // Use a reference-type buffer so we can safely append from FileHandle.readabilityHandler
+  // without mutating captured vars inside a @Sendable closure (Xcode 15.x strict concurrency).
+  private final class LockedDataBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+
+    func append(_ chunk: Data) {
+      lock.lock()
+      data.append(chunk)
+      lock.unlock()
+    }
+
+    func snapshot() -> Data {
+      lock.lock()
+      let copy = data
+      lock.unlock()
+      return copy
+    }
+  }
+
   enum EngineError: LocalizedError {
     case alreadyRunning
     case recorderFailed
@@ -336,10 +356,8 @@ actor WhisperCLISTTEngine: STTEngine {
     let stdoutPipe = process.standardOutput as? Pipe
     let stderrPipe = process.standardError as? Pipe
 
-    let outLock = NSLock()
-    var outData = Data()
-    let errLock = NSLock()
-    var errData = Data()
+    let outBuffer = LockedDataBuffer()
+    let errBuffer = LockedDataBuffer()
 
     let stdoutHandle = stdoutPipe?.fileHandleForReading
     let stderrHandle = stderrPipe?.fileHandleForReading
@@ -348,16 +366,12 @@ actor WhisperCLISTTEngine: STTEngine {
     stdoutHandle?.readabilityHandler = { handle in
       let chunk = handle.availableData
       guard !chunk.isEmpty else { return }
-      outLock.lock()
-      outData.append(chunk)
-      outLock.unlock()
+      outBuffer.append(chunk)
     }
     stderrHandle?.readabilityHandler = { handle in
       let chunk = handle.availableData
       guard !chunk.isEmpty else { return }
-      errLock.lock()
-      errData.append(chunk)
-      errLock.unlock()
+      errBuffer.append(chunk)
     }
 
     let exitCode: Int32 = try await withCheckedThrowingContinuation { continuation in
@@ -383,22 +397,18 @@ actor WhisperCLISTTEngine: STTEngine {
     if let stdoutHandle {
       let tail = stdoutHandle.readDataToEndOfFile()
       if !tail.isEmpty {
-        outLock.lock()
-        outData.append(tail)
-        outLock.unlock()
+        outBuffer.append(tail)
       }
     }
     if let stderrHandle {
       let tail = stderrHandle.readDataToEndOfFile()
       if !tail.isEmpty {
-        errLock.lock()
-        errData.append(tail)
-        errLock.unlock()
+        errBuffer.append(tail)
       }
     }
 
-    let outStr = String(data: outData, encoding: .utf8) ?? ""
-    let errStr = String(data: errData, encoding: .utf8) ?? ""
+    let outStr = String(data: outBuffer.snapshot(), encoding: .utf8) ?? ""
+    let errStr = String(data: errBuffer.snapshot(), encoding: .utf8) ?? ""
 
     return ProcessRunResult(
       exitCode: exitCode,
