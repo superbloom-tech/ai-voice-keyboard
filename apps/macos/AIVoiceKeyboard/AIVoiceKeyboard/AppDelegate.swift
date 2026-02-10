@@ -26,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static let persistHistoryEnabled = "avkb.persistHistoryEnabled"
   }
 
+  private enum OnboardingKeys {
+    static let permissionsGuideShownOnce = "avkb.onboarding.permissionsGuideShownOnce"
+  }
+
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
   private var recordingHUD: RecordingHUDController?
@@ -58,6 +62,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private let activationPolicyController = ActivationPolicyController()
   private lazy var settingsWindowController = SettingsWindowController(
+    activationPolicyController: activationPolicyController
+  )
+  private lazy var permissionsGuideWindowController = PermissionsGuideWindowController(
     activationPolicyController: activationPolicyController
   )
 
@@ -169,6 +176,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     settingsItem.target = self
     menu.addItem(settingsItem)
+
+    let permissionsGuideItem = NSMenuItem(
+      title: "Permissions Guide…",
+      action: #selector(openPermissionsGuide),
+      keyEquivalent: ""
+    )
+    permissionsGuideItem.target = self
+    menu.addItem(permissionsGuideItem)
 
     let quitItem = NSMenuItem(
       title: "Quit",
@@ -294,7 +309,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
       .store(in: &cancellables)
 
+    NotificationCenter.default
+      .publisher(for: .avkbShowPermissionsGuide)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.permissionsGuideWindowController.show()
+      }
+      .store(in: &cancellables)
+
     rebuildHistoryMenu()
+
+    maybeShowPermissionsGuideOnLaunch()
   }
 
   func applicationWillTerminate(_ notification: Notification) {
@@ -395,19 +420,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     guard mic.isSatisfied else {
       appState.status = .error
       appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      permissionsGuideWindowController.show()
       return
     }
 
     if requiresSpeechRecognition, !speech.isSatisfied {
       appState.status = .error
       appState.permissionWarningMessage = "Speech Recognition required. Use “Open Settings…” from the menu bar."
+      permissionsGuideWindowController.show()
       return
     }
 
     // Accessibility is required for reliably pasting into other apps via synthetic Cmd+V.
     // If it's not enabled, we still allow recording/transcription but expect a clipboard-only fallback.
     if !PermissionChecks.status(for: .accessibility).isSatisfied {
-      appState.permissionWarningMessage = "Accessibility not enabled: will copy to clipboard; enable Accessibility for auto-insert"
+      appState.permissionWarningMessage = "Accessibility not enabled: text will be copied to clipboard (press Cmd+V to paste). Enable Accessibility for auto-insert."
     } else {
       appState.permissionWarningMessage = nil
     }
@@ -432,11 +459,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       } else {
         appState.status = .error
         appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+        permissionsGuideWindowController.show()
       }
 
     case .denied, .restricted, .unknown:
       appState.status = .error
       appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      permissionsGuideWindowController.show()
     }
   }
 
@@ -577,6 +606,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     settingsWindowController.show()
   }
 
+  @objc private func openPermissionsGuide() {
+    permissionsGuideWindowController.show()
+  }
+
   @objc private func quit() {
     NSApp.terminate(nil)
   }
@@ -678,6 +711,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     image?.isTemplate = true
     button.image = image
     button.toolTip = "AI Voice Keyboard (\(status.rawValue))"
+  }
+
+  private func maybeShowPermissionsGuideOnLaunch() {
+    let shownOnce = UserDefaults.standard.bool(forKey: OnboardingKeys.permissionsGuideShownOnce)
+
+    let cfg = STTProviderStore.load()
+    let requiresSpeechRecognition: Bool = {
+      if case .appleSpeech = cfg { return true }
+      return false
+    }()
+
+    let micSatisfied = PermissionChecks.status(for: .microphone).isSatisfied
+    let speechSatisfied = PermissionChecks.status(for: .speechRecognition).isSatisfied
+
+    // Show on first launch, or when a required permission is missing.
+    let shouldShow = !shownOnce || !micSatisfied || (requiresSpeechRecognition && !speechSatisfied)
+    guard shouldShow else { return }
+
+    UserDefaults.standard.set(true, forKey: OnboardingKeys.permissionsGuideShownOnce)
+    permissionsGuideWindowController.show()
   }
 }
 
@@ -963,6 +1016,8 @@ extension Notification.Name {
   static let avkbHistoryAppendEdit = Notification.Name("avkb.history.append.edit")
 
   static let avkbHistoryDeletePersistedFile = Notification.Name("avkb.history.persist.deleteFile")
+
+  static let avkbShowPermissionsGuide = Notification.Name("avkb.permissions.guide.show")
 }
 
 struct PasteboardSnapshot: Sendable {

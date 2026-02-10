@@ -34,6 +34,7 @@
 		B726FCF02C01D929DCE7B7A8 /* LLMEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A011A55C8093121E1C482D /* LLMEndpoint.swift */; };
 		BC173604642856C436BC0C46 /* PushToTalkSTTSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9525CFA467368EA8BE495BA7 /* PushToTalkSTTSession.swift */; };
 		BFAC76DD1754B6849D53860D /* OpenAIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */; };
+		CF2990DC2946381BCA1B5FC1 /* PermissionsGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E355B91727EEFB56BA1805A3 /* PermissionsGuideView.swift */; };
 		C52397BD2366E5F8A3A5972C /* PostProcessingSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12C6F1C14AA326395B95778 /* PostProcessingSettingsSection.swift */; };
 		D6522BEE3F5270454BB752AD /* STTEngineFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7031966727210D33FE0B1309 /* STTEngineFactory.swift */; };
 		DC55DABC054B6AF286A7957E /* OpenAIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B44CA6DA2527BD61FAF9AE /* OpenAIClientTests.swift */; };
@@ -41,6 +42,7 @@
 		E551C5751655CF87589BB9D8 /* PostProcessingPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D8DE376DE66669CF9D9BAC /* PostProcessingPipelineTests.swift */; };
 		EB91884252B51297C86ECE66 /* PostProcessingConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E4180EC06AE5DA70E6F70C /* PostProcessingConfigProviderTests.swift */; };
 		ED15A40A3D5DB285D4072A44 /* PasteTextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880D46D9C4D459238B913C18 /* PasteTextInserter.swift */; };
+		F935859A7FD9E183FEBCE2C7 /* PermissionsGuideWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33B587786CBB82200622D88 /* PermissionsGuideWindowController.swift */; };
 		F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */; };
 		F50FB68F95752C3A13B3B24B /* PostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71293D1E7A37E4654058C669 /* PostProcessor.swift */; };
 		FFA66575B55DD5CC4AA75D6E /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F11769D72E2FB09C9B78D8 /* TextInserter.swift */; };
@@ -91,10 +93,12 @@
 		B73A758B9695DC91A92C3B90 /* PostProcessingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingConfig.swift; sourceTree = "<group>"; };
 		BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceKeyboardApp.swift; sourceTree = "<group>"; };
 		BFD18DDCAC688D649565E8C3 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
+		C33B587786CBB82200622D88 /* PermissionsGuideWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsGuideWindowController.swift; sourceTree = "<group>"; };
 		C12C6F1C14AA326395B95778 /* PostProcessingSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingSettingsSection.swift; sourceTree = "<group>"; };
 		D3DF8CCEC1164DF60955772B /* AIVoiceKeyboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIVoiceKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4E4180EC06AE5DA70E6F70C /* PostProcessingConfigProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingConfigProviderTests.swift; sourceTree = "<group>"; };
 		E3B44CA6DA2527BD61FAF9AE /* OpenAIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClientTests.swift; sourceTree = "<group>"; };
+		E355B91727EEFB56BA1805A3 /* PermissionsGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsGuideView.swift; sourceTree = "<group>"; };
 		E5F13F940873227C1756DCAC /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
 		F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -215,6 +219,8 @@
 			isa = PBXGroup;
 			children = (
 				ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */,
+				E355B91727EEFB56BA1805A3 /* PermissionsGuideView.swift */,
+				C33B587786CBB82200622D88 /* PermissionsGuideWindowController.swift */,
 			);
 			path = Permissions;
 			sourceTree = "<group>";
@@ -346,6 +352,8 @@
 				35FFDE52245FB23955EB69A1 /* OpenAICompatibleSTTEngine.swift in Sources */,
 				ED15A40A3D5DB285D4072A44 /* PasteTextInserter.swift in Sources */,
 				B34828295E244BD9B35820A7 /* PermissionCenter.swift in Sources */,
+				CF2990DC2946381BCA1B5FC1 /* PermissionsGuideView.swift in Sources */,
+				F935859A7FD9E183FEBCE2C7 /* PermissionsGuideWindowController.swift in Sources */,
 				47263C583E86975660233B2D /* PostProcessingConfig.swift in Sources */,
 				5092CFDE5C6DF7A7B43A81B2 /* PostProcessingSettingsModel.swift in Sources */,
 				C52397BD2366E5F8A3A5972C /* PostProcessingSettingsSection.swift in Sources */,

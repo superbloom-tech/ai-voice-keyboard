@@ -46,6 +46,13 @@ struct SettingsView: View {
 
         GroupBox("Permissions") {
           VStack(alignment: .leading, spacing: 12) {
+            HStack {
+              Button("Open Permissions Guide…") {
+                NotificationCenter.default.post(name: .avkbShowPermissionsGuide, object: nil)
+              }
+              Spacer()
+            }
+
             PermissionRow(
               kind: .microphone,
               status: permissions.statuses[.microphone] ?? .unknown,
