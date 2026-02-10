@@ -3,6 +3,39 @@ import SwiftUI
 struct PostProcessingSettingsSection: View {
   @ObservedObject var model: PostProcessingSettingsModel
 
+  // Keep macOS 13 compatibility while avoiding `onChange(of:)` deprecation warnings on macOS 14+.
+  private struct ProviderFormatChangeHandler: ViewModifier {
+    @ObservedObject var model: PostProcessingSettingsModel
+
+    func body(content: Content) -> some View {
+      if #available(macOS 14.0, *) {
+        content.onChange(of: model.config.refinerProviderFormat) { _, _ in
+          model.applyBaseURLDefaultForFormatIfEmpty()
+        }
+      } else {
+        content.onChange(of: model.config.refinerProviderFormat) { _ in
+          model.applyBaseURLDefaultForFormatIfEmpty()
+        }
+      }
+    }
+  }
+
+  private struct PresetChangeHandler: ViewModifier {
+    @ObservedObject var model: PostProcessingSettingsModel
+
+    func body(content: Content) -> some View {
+      if #available(macOS 14.0, *) {
+        content.onChange(of: model.config.refinerOpenAICompatiblePreset) { _, _ in
+          model.applyBaseURLDefaultForPreset()
+        }
+      } else {
+        content.onChange(of: model.config.refinerOpenAICompatiblePreset) { _ in
+          model.applyBaseURLDefaultForPreset()
+        }
+      }
+    }
+  }
+
   private static let secondsFormatter: NumberFormatter = {
     let f = NumberFormatter()
     f.numberStyle = .decimal
@@ -15,8 +48,10 @@ struct PostProcessingSettingsSection: View {
     Binding(
       get: { model.config.refinerModel ?? "" },
       set: { newValue in
+        // Avoid trimming on each keystroke (can feel odd while typing).
+        // Downstream creation (`LLMAPIClientFactory`) still trims for correctness.
         let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        model.config.refinerModel = trimmed.isEmpty ? nil : trimmed
+        model.config.refinerModel = trimmed.isEmpty ? nil : newValue
       }
     )
   }
@@ -58,9 +93,7 @@ struct PostProcessingSettingsSection: View {
           Text(format.displayName).tag(format)
         }
       }
-      .onChange(of: model.config.refinerProviderFormat) { _ in
-        model.applyBaseURLDefaultForFormatIfEmpty()
-      }
+      .modifier(ProviderFormatChangeHandler(model: model))
 
       if model.config.refinerProviderFormat == .openAICompatible {
         Picker("Preset", selection: $model.config.refinerOpenAICompatiblePreset) {
@@ -68,9 +101,7 @@ struct PostProcessingSettingsSection: View {
             Text(preset.displayName).tag(preset)
           }
         }
-        .onChange(of: model.config.refinerOpenAICompatiblePreset) { _ in
-          model.applyBaseURLDefaultForPreset()
-        }
+        .modifier(PresetChangeHandler(model: model))
       }
 
       TextField("Base URL (e.g. https://api.openai.com/v1)", text: $model.config.refinerBaseURL)

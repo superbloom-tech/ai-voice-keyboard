@@ -89,7 +89,7 @@ final class AnthropicClient: LLMAPIClient {
       NSLog("[PostProcessing][AnthropicClient] Invalid API key (HTTP %d)", httpResponse.statusCode)
       throw LLMAPIError.invalidAPIKey
     default:
-      let message = (try? parseErrorMessage(from: data)) ?? "Unknown error"
+      let message = parseErrorMessage(from: data)
       NSLog("[PostProcessing][AnthropicClient] API error (HTTP %d): %@", httpResponse.statusCode, message)
       throw LLMAPIError.apiError(statusCode: httpResponse.statusCode, message: message)
     }
@@ -113,7 +113,7 @@ final class AnthropicClient: LLMAPIClient {
     throw LLMAPIError.invalidResponse
   }
 
-  private func parseErrorMessage(from data: Data) throws -> String {
+  private func parseErrorMessage(from data: Data) -> String {
     guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
       return "Unknown error"
     }

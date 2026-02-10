@@ -176,6 +176,16 @@ struct PostProcessingConfig: Codable {
     refinerTimeout = try container.decode(TimeInterval.self, forKey: .refinerTimeout)
     refinerModel = try container.decodeIfPresent(String.self, forKey: .refinerModel)
 
+    // Legacy (Issue #33) provider string is used for backward compatibility.
+    let legacyProviderString = try container.decodeIfPresent(String.self, forKey: .refinerProvider)
+    let legacyProviderStringLower = legacyProviderString?.lowercased()
+    let legacyProvider: LLMProvider? = {
+      if let legacyProviderStringLower {
+        return LLMProvider(rawValue: legacyProviderStringLower)
+      }
+      return try? container.decodeIfPresent(LLMProvider.self, forKey: .refinerProvider)
+    }()
+
     // New fields (Issue #35)
     let decodedFormat = try container.decodeIfPresent(LLMProviderFormat.self, forKey: .refinerProviderFormat)
     let decodedPreset = try container.decodeIfPresent(OpenAICompatiblePreset.self, forKey: .refinerOpenAICompatiblePreset)
@@ -185,13 +195,6 @@ struct PostProcessingConfig: Codable {
       refinerProviderFormat = decodedFormat
     } else {
       // Legacy mapping from `refinerProvider` (Issue #33)
-      let legacyProvider: LLMProvider?
-      if let providerString = try container.decodeIfPresent(String.self, forKey: .refinerProvider) {
-        legacyProvider = LLMProvider(rawValue: providerString.lowercased())
-      } else {
-        legacyProvider = try container.decodeIfPresent(LLMProvider.self, forKey: .refinerProvider)
-      }
-
       switch legacyProvider {
       case .anthropic:
         refinerProviderFormat = .anthropic
@@ -205,12 +208,11 @@ struct PostProcessingConfig: Codable {
       refinerOpenAICompatiblePreset = decodedPreset
     } else {
       // Derive preset from legacy provider when possible
-      let legacyProviderString = (try? container.decodeIfPresent(String.self, forKey: .refinerProvider))?.lowercased()
-      if legacyProviderString == "openrouter" {
+      if legacyProviderStringLower == "openrouter" {
         refinerOpenAICompatiblePreset = .openrouter
-      } else if legacyProviderString == "custom" {
+      } else if legacyProviderStringLower == "custom" {
         refinerOpenAICompatiblePreset = .custom
-      } else if legacyProviderString == "ollama" {
+      } else if legacyProviderStringLower == "ollama" {
         refinerOpenAICompatiblePreset = .custom
       } else {
         refinerOpenAICompatiblePreset = .openai
