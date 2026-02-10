@@ -101,3 +101,90 @@
 "error.permission.speech_required" = "需要語音識別權限。請在選單列點擊「打開設定…」進行授權。";
 "warning.permission.accessibility_clipboard_fallback" = "未開啟輔助功能：文字將複製到剪貼簿（按 Cmd+V 貼上）。如需自動插入，請開啟輔助功能。";
 
+/* Common */
+"common.enabled" = "啟用";
+"common.timeout_seconds" = "逾時（秒）";
+"common.status.saved" = "已儲存";
+"common.status.not_saved" = "未儲存";
+"common.status.testing" = "測試中…";
+"common.status.success" = "成功。";
+"common.value.unknown" = "未知";
+
+"common.action.add" = "新增";
+"common.action.duplicate" = "複製";
+"common.action.delete" = "刪除";
+"common.action.save" = "儲存";
+"common.action.reset" = "重置";
+"common.action.default" = "預設";
+"common.action.test" = "測試";
+
+"common.api_key_keychain_title" = "API Key（鑰匙串）";
+"common.api_key_enter_placeholder" = "輸入新的 API Key";
+
+"common.error.api_key_empty" = "API Key 不能為空。";
+"common.error.invalid_api_key" = "API Key 無效。";
+"common.error.timeout" = "請求逾時。";
+
+/* STT settings */
+"settings.stt.provider_label" = "引擎";
+
+"settings.stt.apple_speech.locale_identifier_placeholder" = "Locale 識別碼（可選，例如 en_US、zh_CN）";
+"settings.stt.apple_speech.permission_hint" = "需要開啟 macOS 的「語音識別」權限。";
+
+"settings.stt.whisper.executable_path_placeholder" = "Whisper 可執行檔路徑（可選）";
+"settings.stt.whisper.model_placeholder" = "模型（例如 turbo、base、small）";
+"settings.stt.whisper.language_placeholder" = "語言（可選，例如 en、zh）";
+"settings.stt.whisper.install_hint" = "安裝：`brew install openai-whisper`（提供 `whisper` 指令）。首次執行可能會下載模型檔案，耗時更長。";
+
+"settings.stt.remote.base_url_placeholder" = "Base URL（例如 https://api.openai.com/v1）";
+"settings.stt.remote.model_placeholder" = "模型（例如 whisper-1）";
+"settings.stt.remote.api_key_id_placeholder" = "API Key ID（鑰匙串 key）";
+"settings.stt.remote.api_key.status_format" = "狀態：%@（ID：%@）";
+"settings.stt.remote.api_key.error_id_empty" = "API Key ID 不能為空。";
+"settings.stt.remote.api_key.saved_format" = "已儲存 API Key（ID：%@）。";
+"settings.stt.remote.api_key.deleted_format" = "已刪除 API Key（ID：%@）。";
+"settings.stt.remote.privacy_hint" = "隱私：音訊將送往所設定的服務端。";
+
+"settings.stt.validation.invalid_config" = "STT 設定無效（例如 Base URL 必須是合法 URL）。";
+"settings.stt.validation.has_errors" = "STT 設定有錯誤，請檢查欄位。";
+
+/* Post-processing settings */
+"settings.post_processing.enabled_toggle" = "啟用後處理";
+
+"settings.post_processing.cleaner.header" = "清理器";
+"settings.post_processing.cleaner.rules_preset" = "規則預設";
+"settings.post_processing.cleaner.rules.basic" = "基礎";
+"settings.post_processing.cleaner.rules.standard" = "標準";
+"settings.post_processing.cleaner.rules.aggressive" = "強化";
+
+"settings.post_processing.refiner.header" = "LLM 潤色";
+"settings.post_processing.refiner.profile_picker" = "設定檔";
+"settings.post_processing.refiner.profile_name_placeholder" = "設定檔名稱";
+"settings.post_processing.refiner.provider_format" = "提供者格式";
+"settings.post_processing.refiner.preset" = "預設";
+"settings.post_processing.refiner.base_url_placeholder" = "Base URL（例如 https://api.openai.com/v1）";
+"settings.post_processing.refiner.endpoint_hint" = "端點會自動拼接：OpenAI 相容 => /chat/completions，Anthropic => /messages";
+"settings.post_processing.refiner.model_placeholder" = "模型";
+
+"settings.post_processing.profile.default_name" = "設定檔";
+"settings.post_processing.profile.new_name" = "新設定檔";
+"settings.post_processing.profile.copy_suffix" = "副本";
+
+"settings.post_processing.api_key.status_format" = "狀態：%@（設定檔：%@）";
+"settings.post_processing.api_key.saved_format" = "已儲存 API Key（設定檔：%@）。";
+"settings.post_processing.api_key.deleted_format" = "已刪除 API Key（設定檔：%@）。";
+
+"settings.post_processing.fallback.header" = "回退";
+"settings.post_processing.fallback.behavior_picker" = "策略";
+"settings.post_processing.fallback.behavior.return_original" = "回傳原文";
+"settings.post_processing.fallback.behavior.return_last_valid" = "回傳上一次有效結果";
+"settings.post_processing.fallback.behavior.throw_error" = "拋出錯誤";
+
+"settings.post_processing.privacy_hint" = "隱私：潤色會將文字送往所選的第三方服務。";
+
+/* LLM provider names */
+"llm_provider_format.openai_compatible" = "OpenAI 相容";
+"llm_provider_format.anthropic" = "Anthropic";
+"llm_openai_preset.openai" = "OpenAI";
+"llm_openai_preset.openrouter" = "OpenRouter";
+"llm_openai_preset.custom" = "自訂";

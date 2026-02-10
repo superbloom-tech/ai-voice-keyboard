@@ -100,3 +100,91 @@
 "error.permission.microphone_required" = "Microphone required. Use “Open Settings…” from the menu bar.";
 "error.permission.speech_required" = "Speech Recognition required. Use “Open Settings…” from the menu bar.";
 "warning.permission.accessibility_clipboard_fallback" = "Accessibility not enabled: text will be copied to clipboard (press Cmd+V to paste). Enable Accessibility for auto-insert.";
+
+/* Common */
+"common.enabled" = "Enabled";
+"common.timeout_seconds" = "Timeout (seconds)";
+"common.status.saved" = "Saved";
+"common.status.not_saved" = "Not saved";
+"common.status.testing" = "Testing...";
+"common.status.success" = "Success.";
+"common.value.unknown" = "Unknown";
+
+"common.action.add" = "Add";
+"common.action.duplicate" = "Duplicate";
+"common.action.delete" = "Delete";
+"common.action.save" = "Save";
+"common.action.reset" = "Reset";
+"common.action.default" = "Default";
+"common.action.test" = "Test";
+
+"common.api_key_keychain_title" = "API Key (Keychain)";
+"common.api_key_enter_placeholder" = "Enter new API key";
+
+"common.error.api_key_empty" = "API key cannot be empty.";
+"common.error.invalid_api_key" = "Invalid API key.";
+"common.error.timeout" = "Timeout.";
+
+/* STT settings */
+"settings.stt.provider_label" = "Provider";
+
+"settings.stt.apple_speech.locale_identifier_placeholder" = "Locale identifier (optional, e.g. en_US, zh_CN)";
+"settings.stt.apple_speech.permission_hint" = "Requires macOS Speech Recognition permission.";
+
+"settings.stt.whisper.executable_path_placeholder" = "Whisper executable path (optional)";
+"settings.stt.whisper.model_placeholder" = "Model (e.g. turbo, base, small)";
+"settings.stt.whisper.language_placeholder" = "Language (optional, e.g. en, zh)";
+"settings.stt.whisper.install_hint" = "Install: `brew install openai-whisper` (provides the `whisper` CLI). First run may download model files and take longer.";
+
+"settings.stt.remote.base_url_placeholder" = "Base URL (e.g. https://api.openai.com/v1)";
+"settings.stt.remote.model_placeholder" = "Model (e.g. whisper-1)";
+"settings.stt.remote.api_key_id_placeholder" = "API Key ID (Keychain key)";
+"settings.stt.remote.api_key.status_format" = "Status: %@ (ID: %@)";
+"settings.stt.remote.api_key.error_id_empty" = "API key id cannot be empty.";
+"settings.stt.remote.api_key.saved_format" = "API key saved for id: %@.";
+"settings.stt.remote.api_key.deleted_format" = "API key deleted for id: %@.";
+"settings.stt.remote.privacy_hint" = "Privacy: audio is sent to the configured provider.";
+
+"settings.stt.validation.invalid_config" = "Invalid STT configuration (e.g. Base URL must be a valid URL).";
+"settings.stt.validation.has_errors" = "STT configuration has errors. Please review the fields.";
+
+/* Post-processing settings */
+"settings.post_processing.enabled_toggle" = "Post-processing Enabled";
+
+"settings.post_processing.cleaner.header" = "Cleaner";
+"settings.post_processing.cleaner.rules_preset" = "Rules preset";
+"settings.post_processing.cleaner.rules.basic" = "Basic";
+"settings.post_processing.cleaner.rules.standard" = "Standard";
+"settings.post_processing.cleaner.rules.aggressive" = "Aggressive";
+
+"settings.post_processing.refiner.header" = "LLM Refiner";
+"settings.post_processing.refiner.profile_picker" = "Profile";
+"settings.post_processing.refiner.profile_name_placeholder" = "Profile name";
+"settings.post_processing.refiner.provider_format" = "Provider format";
+"settings.post_processing.refiner.preset" = "Preset";
+"settings.post_processing.refiner.base_url_placeholder" = "Base URL (e.g. https://api.openai.com/v1)";
+"settings.post_processing.refiner.endpoint_hint" = "Endpoint is appended automatically: OpenAI-compatible => /chat/completions, Anthropic => /messages";
+"settings.post_processing.refiner.model_placeholder" = "Model";
+
+"settings.post_processing.profile.default_name" = "Profile";
+"settings.post_processing.profile.new_name" = "New Profile";
+"settings.post_processing.profile.copy_suffix" = "Copy";
+
+"settings.post_processing.api_key.status_format" = "Status: %@ (Profile: %@)";
+"settings.post_processing.api_key.saved_format" = "API key saved for profile: %@.";
+"settings.post_processing.api_key.deleted_format" = "API key deleted for profile: %@.";
+
+"settings.post_processing.fallback.header" = "Fallback";
+"settings.post_processing.fallback.behavior_picker" = "Behavior";
+"settings.post_processing.fallback.behavior.return_original" = "Return original";
+"settings.post_processing.fallback.behavior.return_last_valid" = "Return last valid";
+"settings.post_processing.fallback.behavior.throw_error" = "Throw error";
+
+"settings.post_processing.privacy_hint" = "Privacy: Refiner sends text to the selected third-party provider.";
+
+/* LLM provider names */
+"llm_provider_format.openai_compatible" = "OpenAI-compatible";
+"llm_provider_format.anthropic" = "Anthropic";
+"llm_openai_preset.openai" = "OpenAI";
+"llm_openai_preset.openrouter" = "OpenRouter";
+"llm_openai_preset.custom" = "Custom";
