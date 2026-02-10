@@ -18,5 +18,7 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+      - name: Check Xcode project format (objectVersion)
+        run: scripts/check_xcodeproj_objectversion.sh
       - name: Build macOS app (AIVoiceKeyboard)
         run: xcodebuild -project apps/macos/AIVoiceKeyboard/AIVoiceKeyboard.xcodeproj -scheme AIVoiceKeyboard -configuration Debug -sdk macosx -destination "platform=macOS" build
