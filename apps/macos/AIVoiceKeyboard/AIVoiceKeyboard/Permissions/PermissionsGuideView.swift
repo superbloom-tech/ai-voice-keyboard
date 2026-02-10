@@ -5,6 +5,7 @@ import VoiceKeyboardCore
 /// to request permissions / open System Settings / refresh status.
 struct PermissionsGuideView: View {
   @StateObject private var permissions = PermissionCenter()
+  @State private var showProviderHelpPopover = false
 
   let onDone: () -> Void
 
@@ -42,10 +43,22 @@ struct PermissionsGuideView: View {
             .font(.footnote)
             .foregroundStyle(.secondary)
 
-          Image(systemName: "info.circle")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .help(Text("permissions_guide.current_provider_help"))
+          Button {
+            showProviderHelpPopover.toggle()
+          } label: {
+            Image(systemName: "info.circle")
+              .font(.footnote)
+              .foregroundStyle(.secondary)
+              .padding(4) // Larger hover/click target.
+          }
+          .buttonStyle(.plain)
+          .help(Text("permissions_guide.current_provider_help"))
+          .popover(isPresented: $showProviderHelpPopover, arrowEdge: .bottom) {
+            Text("permissions_guide.current_provider_help")
+              .font(.footnote)
+              .padding(12)
+              .frame(width: 320, alignment: .leading)
+          }
         }
       }
 
@@ -121,6 +134,7 @@ private struct PermissionGuideRow: View {
   let onRequest: () async -> Void
   let onOpenSystemSettings: () -> Void
   let onRefresh: () -> Void
+  @State private var showHelpPopover = false
 
   var body: some View {
     HStack(spacing: 12) {
@@ -141,9 +155,21 @@ private struct PermissionGuideRow: View {
         .padding(.horizontal, 8)
         .background(Capsule().fill(Color.secondary.opacity(0.12)))
 
-      Image(systemName: "info.circle")
-        .foregroundStyle(.secondary)
-        .help(Text(help))
+      Button {
+        showHelpPopover.toggle()
+      } label: {
+        Image(systemName: "info.circle")
+          .foregroundStyle(.secondary)
+          .padding(4) // Larger hover/click target.
+      }
+      .buttonStyle(.plain)
+      .help(Text(help))
+      .popover(isPresented: $showHelpPopover, arrowEdge: .bottom) {
+        Text(help)
+          .font(.footnote)
+          .padding(12)
+          .frame(width: 320, alignment: .leading)
+      }
 
       Spacer()
 
