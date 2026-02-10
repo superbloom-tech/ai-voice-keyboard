@@ -333,32 +333,77 @@ actor WhisperCLISTTEngine: STTEngine {
   }
 
   private func runProcessUntilExit(_ process: Process) async throws -> ProcessRunResult {
-    let stdout = process.standardOutput as? Pipe
-    let stderr = process.standardError as? Pipe
+    let stdoutPipe = process.standardOutput as? Pipe
+    let stderrPipe = process.standardError as? Pipe
 
-    do {
-      try process.run()
-      NSLog("[WhisperSTT] Process launched (pid: %d)", process.processIdentifier)
-    } catch {
-      NSLog("[WhisperSTT] ERROR: Failed to launch process: %@", error.localizedDescription)
-      throw EngineError.whisperExecutableNotFound
+    let outLock = NSLock()
+    var outData = Data()
+    let errLock = NSLock()
+    var errData = Data()
+
+    let stdoutHandle = stdoutPipe?.fileHandleForReading
+    let stderrHandle = stderrPipe?.fileHandleForReading
+
+    // Drain stdout/stderr while the process is running to avoid deadlock when the pipe buffer fills up.
+    stdoutHandle?.readabilityHandler = { handle in
+      let chunk = handle.availableData
+      guard !chunk.isEmpty else { return }
+      outLock.lock()
+      outData.append(chunk)
+      outLock.unlock()
+    }
+    stderrHandle?.readabilityHandler = { handle in
+      let chunk = handle.availableData
+      guard !chunk.isEmpty else { return }
+      errLock.lock()
+      errData.append(chunk)
+      errLock.unlock()
     }
 
-    return try await withCheckedThrowingContinuation { continuation in
+    let exitCode: Int32 = try await withCheckedThrowingContinuation { continuation in
       process.terminationHandler = { proc in
-        let outData = stdout?.fileHandleForReading.readDataToEndOfFile() ?? Data()
-        let errData = stderr?.fileHandleForReading.readDataToEndOfFile() ?? Data()
+        continuation.resume(returning: proc.terminationStatus)
+      }
 
-        let outStr = String(data: outData, encoding: .utf8) ?? ""
-        let errStr = String(data: errData, encoding: .utf8) ?? ""
-
-        continuation.resume(returning: ProcessRunResult(
-          exitCode: proc.terminationStatus,
-          stdout: outStr,
-          stderr: errStr
-        ))
+      do {
+        try process.run()
+        NSLog("[WhisperSTT] Process launched (pid: %d)", process.processIdentifier)
+      } catch {
+        stdoutHandle?.readabilityHandler = nil
+        stderrHandle?.readabilityHandler = nil
+        NSLog("[WhisperSTT] ERROR: Failed to launch process: %@", error.localizedDescription)
+        continuation.resume(throwing: EngineError.whisperExecutableNotFound)
       }
     }
+
+    // Stop draining and collect any remaining data.
+    stdoutHandle?.readabilityHandler = nil
+    stderrHandle?.readabilityHandler = nil
+
+    if let stdoutHandle {
+      let tail = stdoutHandle.readDataToEndOfFile()
+      if !tail.isEmpty {
+        outLock.lock()
+        outData.append(tail)
+        outLock.unlock()
+      }
+    }
+    if let stderrHandle {
+      let tail = stderrHandle.readDataToEndOfFile()
+      if !tail.isEmpty {
+        errLock.lock()
+        errData.append(tail)
+        errLock.unlock()
+      }
+    }
+
+    let outStr = String(data: outData, encoding: .utf8) ?? ""
+    let errStr = String(data: errData, encoding: .utf8) ?? ""
+
+    return ProcessRunResult(
+      exitCode: exitCode,
+      stdout: outStr,
+      stderr: errStr
+    )
   }
 }
-

@@ -51,9 +51,11 @@ final class STTSettingsModel: ObservableObject {
 
   private var cancellables: Set<AnyCancellable> = []
   private var isBootstrapping: Bool = true
+  private var lastPersistedConfiguration: STTProviderConfiguration?
 
   init(configuration: STTProviderConfiguration = STTProviderStore.load()) {
     apply(configuration: configuration)
+    lastPersistedConfiguration = configuration
 
     // Avoid saving during init.
     isBootstrapping = false
@@ -187,9 +189,16 @@ final class STTSettingsModel: ObservableObject {
       return
     }
 
-    STTProviderStore.save(cfg)
     configMessageIsError = false
     configMessage = nil
+
+    // Avoid re-saving when only UI-only state (e.g. apiKeyDraft) changes.
+    if lastPersistedConfiguration == cfg {
+      return
+    }
+
+    STTProviderStore.save(cfg)
+    lastPersistedConfiguration = cfg
   }
 
   private func apply(configuration: STTProviderConfiguration) {
@@ -214,4 +223,3 @@ final class STTSettingsModel: ObservableObject {
     }
   }
 }
-

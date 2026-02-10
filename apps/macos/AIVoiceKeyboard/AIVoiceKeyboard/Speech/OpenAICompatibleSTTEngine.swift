@@ -158,7 +158,7 @@ actor OpenAICompatibleSTTEngine: STTEngine {
     ]
 
     // Best-effort language hint.
-    if let lang = locale.languageCode, !lang.isEmpty {
+    if let lang = locale.language.languageCode?.identifier, !lang.isEmpty {
       fields.append(("language", lang))
     }
 
@@ -217,15 +217,28 @@ actor OpenAICompatibleSTTEngine: STTEngine {
         }
       }
 
+      func sanitizeDispositionValue(_ s: String) -> String {
+        // Prevent header injection if this writer gets reused with dynamic names/filenames.
+        // (In current usage all values are hard-coded safe strings.)
+        var out = s
+        out = out.replacingOccurrences(of: "\r", with: "")
+        out = out.replacingOccurrences(of: "\n", with: "")
+        out = out.replacingOccurrences(of: "\"", with: "'")
+        return out
+      }
+
       for (name, value) in fields {
+        let safeName = sanitizeDispositionValue(name)
         try writeString("--\(boundary)\r\n")
-        try writeString("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
+        try writeString("Content-Disposition: form-data; name=\"\(safeName)\"\r\n\r\n")
         try writeString(value)
         try writeString("\r\n")
       }
 
+      let safeFileFieldName = sanitizeDispositionValue(fileFieldName)
+      let safeFilename = sanitizeDispositionValue(filename)
       try writeString("--\(boundary)\r\n")
-      try writeString("Content-Disposition: form-data; name=\"\(fileFieldName)\"; filename=\"\(filename)\"\r\n")
+      try writeString("Content-Disposition: form-data; name=\"\(safeFileFieldName)\"; filename=\"\(safeFilename)\"\r\n")
       try writeString("Content-Type: \(mimeType)\r\n\r\n")
 
       let readHandle = try FileHandle(forReadingFrom: fileURL)
@@ -242,4 +255,3 @@ actor OpenAICompatibleSTTEngine: STTEngine {
     }
   }
 }
-
