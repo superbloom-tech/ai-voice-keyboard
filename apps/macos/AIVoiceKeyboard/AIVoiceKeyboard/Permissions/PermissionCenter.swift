@@ -12,11 +12,11 @@ enum PermissionKind: String, CaseIterable, Sendable {
   var displayName: String {
     switch self {
     case .microphone:
-      return "Microphone"
+      return NSLocalizedString("permission.kind.microphone", comment: "")
     case .speechRecognition:
-      return "Speech Recognition"
+      return NSLocalizedString("permission.kind.speech_recognition", comment: "")
     case .accessibility:
-      return "Accessibility"
+      return NSLocalizedString("permission.kind.accessibility", comment: "")
     }
   }
 }
@@ -33,15 +33,15 @@ enum PermissionStatus: String, Sendable {
   var displayText: String {
     switch self {
     case .authorized:
-      return "Authorized"
+      return NSLocalizedString("permission.status.authorized", comment: "")
     case .denied:
-      return "Denied"
+      return NSLocalizedString("permission.status.denied", comment: "")
     case .notDetermined:
-      return "Not Determined"
+      return NSLocalizedString("permission.status.not_determined", comment: "")
     case .restricted:
-      return "Restricted"
+      return NSLocalizedString("permission.status.restricted", comment: "")
     case .unknown:
-      return "Unknown"
+      return NSLocalizedString("permission.status.unknown", comment: "")
     }
   }
 }

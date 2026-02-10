@@ -1,0 +1,102 @@
+/* Permissions Guide (#29) */
+
+"permissions_guide.title" = "权限引导";
+"permissions_guide.subtitle" = "要录音并把文字插入到其他应用中，AI Voice Keyboard 需要一些 macOS 权限。";
+"permissions_guide.current_provider_label" = "当前 STT 引擎";
+"permissions_guide.current_provider_help" = "仅在使用 Apple Speech 时需要开启“语音识别”权限。";
+
+"permissions_guide.section.required" = "必须";
+"permissions_guide.section.auto_insert" = "自动插入（建议开启）";
+
+"permissions_guide.tag.required" = "必须";
+"permissions_guide.tag.optional" = "可选";
+"permissions_guide.tag.recommended" = "建议";
+
+"permissions_guide.action.request" = "请求";
+"permissions_guide.action.prompt" = "弹出提示";
+"permissions_guide.action.open_system_settings" = "打开系统设置";
+"permissions_guide.action.refresh" = "刷新";
+"permissions_guide.action.done" = "完成";
+"permissions_guide.status.ok" = "已就绪";
+
+"permissions_guide.help.microphone" = "用于录音。";
+"permissions_guide.help.speech_required" = "使用 Apple Speech 时必须开启。";
+"permissions_guide.help.speech_optional" = "仅 Apple Speech 需要；Whisper/远端 STT 不需要该权限。";
+"permissions_guide.help.accessibility" = "用于自动插入到其他应用。未开启时会自动复制到剪贴板，你可以按 Cmd+V 手动粘贴。";
+"permissions_guide.tip.accessibility_trust" = "提示：辅助功能是“信任设置”。在系统设置里开启后，回到本应用并点击“刷新”更新状态。";
+
+/* Menu / window */
+"permissions_guide.menu_item" = "权限引导…";
+"permissions_guide.window_title" = "权限引导";
+"permissions_guide.settings_button" = "打开权限引导…";
+
+/* STT provider names */
+"stt_provider.apple_speech" = "Apple Speech";
+"stt_provider.whisper_local" = "Whisper（本地）";
+"stt_provider.openai_compatible" = "远端（OpenAI 兼容）";
+
+/* Permission kinds */
+"permission.kind.microphone" = "麦克风";
+"permission.kind.speech_recognition" = "语音识别";
+"permission.kind.accessibility" = "辅助功能";
+
+/* Permission statuses */
+"permission.status.authorized" = "已授权";
+"permission.status.denied" = "已拒绝";
+"permission.status.not_determined" = "未请求";
+"permission.status.restricted" = "受限";
+"permission.status.unknown" = "未知";
+"permission.status.trusted" = "已信任";
+"permission.status.not_trusted" = "未信任";
+
+/* Settings */
+"settings.window_title" = "设置";
+"settings.app_title" = "AI 语音键盘";
+
+"settings.section.permissions" = "权限";
+"settings.permissions.tip_denied" = "提示：如果权限被拒绝，请点击“打开系统设置”授予权限，然后点击“刷新”。";
+"settings.permissions.tip_accessibility" = "提示：辅助功能是“信任设置”，无法一键授权。在系统设置里开启后，回到本应用并点击“刷新”更新状态。部分应用可能需要重新聚焦或重启后才生效。";
+
+"settings.section.history" = "历史";
+"settings.history.persist_toggle" = "将历史记录保存到磁盘";
+"settings.history.persist_desc" = "关闭（默认）：历史仅保存在内存中，重启后清空。开启：历史会保存到磁盘，重启后仍可恢复。";
+"settings.history.alert_disable_title" = "关闭持久化？";
+"settings.history.alert_disable_message" = "关闭后，历史仍会在本次会话保存在内存中，但重启后不会恢复。你也可以选择现在删除已保存的历史文件。";
+"settings.history.alert_action_turn_off_keep" = "关闭（保留文件）";
+"settings.history.alert_action_turn_off_delete" = "关闭（删除文件）";
+
+"settings.section.stt" = "语音转文字（STT）";
+"settings.section.post_processing" = "后处理 / LLM";
+
+/* Language */
+"settings.language.section_title" = "语言";
+"settings.language.picker_label" = "应用语言";
+"settings.language.restart_hint" = "切换语言需要重启应用后生效。";
+"settings.language.option.system" = "跟随系统（自动）";
+"settings.language.option.en" = "英文";
+"settings.language.option.zh_hans" = "简体中文";
+"settings.language.option.zh_hant" = "繁体中文";
+"settings.language.restart_title" = "需要重启";
+"settings.language.restart_message" = "退出并重新打开应用以应用新的语言。";
+"settings.language.restart_action_later" = "稍后";
+"settings.language.restart_action_quit" = "立即退出";
+
+/* Common */
+"common.action.cancel" = "取消";
+
+/* Menu */
+"menu.open_settings" = "打开设置…";
+"menu.quit" = "退出";
+"menu.history" = "历史";
+"menu.history_clear" = "清空历史";
+"menu.history_empty" = "暂无历史";
+"menu.toggle_insert" = "切换插入录音";
+"menu.toggle_edit" = "切换编辑录音";
+"menu.toggle_edit_coming_soon" = "切换编辑录音（即将推出）";
+"menu.clipboard_restore_original" = "恢复原剪贴板";
+"menu.dev_add_sample_entry" = "开发：添加示例条目";
+
+/* Errors / warnings */
+"error.permission.microphone_required" = "需要麦克风权限。请在菜单栏点击“打开设置…”进行授权。";
+"error.permission.speech_required" = "需要语音识别权限。请在菜单栏点击“打开设置…”进行授权。";
+"warning.permission.accessibility_clipboard_fallback" = "未开启辅助功能：文字将复制到剪贴板（按 Cmd+V 粘贴）。如需自动插入，请开启辅助功能。";

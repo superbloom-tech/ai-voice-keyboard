@@ -1,0 +1,103 @@
+/* Permissions Guide (#29) */
+
+"permissions_guide.title" = "權限引導";
+"permissions_guide.subtitle" = "要錄音並把文字插入到其他應用中，AI Voice Keyboard 需要一些 macOS 權限。";
+"permissions_guide.current_provider_label" = "目前 STT 引擎";
+"permissions_guide.current_provider_help" = "僅在使用 Apple Speech 時需要開啟「語音識別」權限。";
+
+"permissions_guide.section.required" = "必須";
+"permissions_guide.section.auto_insert" = "自動插入（建議開啟）";
+
+"permissions_guide.tag.required" = "必須";
+"permissions_guide.tag.optional" = "可選";
+"permissions_guide.tag.recommended" = "建議";
+
+"permissions_guide.action.request" = "請求";
+"permissions_guide.action.prompt" = "彈出提示";
+"permissions_guide.action.open_system_settings" = "開啟系統設定";
+"permissions_guide.action.refresh" = "重新整理";
+"permissions_guide.action.done" = "完成";
+"permissions_guide.status.ok" = "已就緒";
+
+"permissions_guide.help.microphone" = "用於錄音。";
+"permissions_guide.help.speech_required" = "使用 Apple Speech 時必須開啟。";
+"permissions_guide.help.speech_optional" = "僅 Apple Speech 需要；Whisper/遠端 STT 不需要此權限。";
+"permissions_guide.help.accessibility" = "用於自動插入到其他應用。未開啟時會自動複製到剪貼簿，你可以按 Cmd+V 手動貼上。";
+"permissions_guide.tip.accessibility_trust" = "提示：輔助功能是「信任設定」。在系統設定裡開啟後，回到本應用並點擊「重新整理」更新狀態。";
+
+/* Menu / window */
+"permissions_guide.menu_item" = "權限引導…";
+"permissions_guide.window_title" = "權限引導";
+"permissions_guide.settings_button" = "開啟權限引導…";
+
+/* STT provider names */
+"stt_provider.apple_speech" = "Apple Speech";
+"stt_provider.whisper_local" = "Whisper（本機）";
+"stt_provider.openai_compatible" = "遠端（OpenAI 相容）";
+
+/* Permission kinds */
+"permission.kind.microphone" = "麥克風";
+"permission.kind.speech_recognition" = "語音識別";
+"permission.kind.accessibility" = "輔助功能";
+
+/* Permission statuses */
+"permission.status.authorized" = "已授權";
+"permission.status.denied" = "已拒絕";
+"permission.status.not_determined" = "未請求";
+"permission.status.restricted" = "受限";
+"permission.status.unknown" = "未知";
+"permission.status.trusted" = "已信任";
+"permission.status.not_trusted" = "未信任";
+
+/* Settings */
+"settings.window_title" = "設定";
+"settings.app_title" = "AI 語音鍵盤";
+
+"settings.section.permissions" = "權限";
+"settings.permissions.tip_denied" = "提示：如果權限被拒絕，請點擊「開啟系統設定」授予權限，然後點擊「重新整理」。";
+"settings.permissions.tip_accessibility" = "提示：輔助功能是「信任設定」，無法一鍵授權。在系統設定裡開啟後，回到本應用並點擊「重新整理」更新狀態。部分應用可能需要重新聚焦或重啟後才生效。";
+
+"settings.section.history" = "歷史";
+"settings.history.persist_toggle" = "將歷史記錄儲存到磁碟";
+"settings.history.persist_desc" = "關閉（預設）：歷史僅保存在記憶體中，重啟後清空。開啟：歷史會儲存到磁碟，重啟後仍可恢復。";
+"settings.history.alert_disable_title" = "關閉持久化？";
+"settings.history.alert_disable_message" = "關閉後，歷史仍會在本次會話保存在記憶體中，但重啟後不會恢復。你也可以選擇現在刪除已儲存的歷史檔案。";
+"settings.history.alert_action_turn_off_keep" = "關閉（保留檔案）";
+"settings.history.alert_action_turn_off_delete" = "關閉（刪除檔案）";
+
+"settings.section.stt" = "語音轉文字（STT）";
+"settings.section.post_processing" = "後處理 / LLM";
+
+/* Language */
+"settings.language.section_title" = "語言";
+"settings.language.picker_label" = "應用語言";
+"settings.language.restart_hint" = "切換語言需要重啟應用後生效。";
+"settings.language.option.system" = "跟隨系統（自動）";
+"settings.language.option.en" = "英文";
+"settings.language.option.zh_hans" = "簡體中文";
+"settings.language.option.zh_hant" = "繁體中文";
+"settings.language.restart_title" = "需要重啟";
+"settings.language.restart_message" = "退出並重新打開應用以套用新的語言。";
+"settings.language.restart_action_later" = "稍後";
+"settings.language.restart_action_quit" = "立即退出";
+
+/* Common */
+"common.action.cancel" = "取消";
+
+/* Menu */
+"menu.open_settings" = "打開設定…";
+"menu.quit" = "退出";
+"menu.history" = "歷史";
+"menu.history_clear" = "清空歷史";
+"menu.history_empty" = "暫無歷史";
+"menu.toggle_insert" = "切換插入錄音";
+"menu.toggle_edit" = "切換編輯錄音";
+"menu.toggle_edit_coming_soon" = "切換編輯錄音（即將推出）";
+"menu.clipboard_restore_original" = "恢復原剪貼簿";
+"menu.dev_add_sample_entry" = "開發：新增示例條目";
+
+/* Errors / warnings */
+"error.permission.microphone_required" = "需要麥克風權限。請在選單列點擊「打開設定…」進行授權。";
+"error.permission.speech_required" = "需要語音識別權限。請在選單列點擊「打開設定…」進行授權。";
+"warning.permission.accessibility_clipboard_fallback" = "未開啟輔助功能：文字將複製到剪貼簿（按 Cmd+V 貼上）。如需自動插入，請開啟輔助功能。";
+

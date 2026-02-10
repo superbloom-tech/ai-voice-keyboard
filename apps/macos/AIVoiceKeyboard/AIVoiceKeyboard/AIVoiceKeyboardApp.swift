@@ -1,8 +1,16 @@
+import AppKit
 import SwiftUI
 
 @main
 struct AIVoiceKeyboardApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+  init() {
+    // Unit tests run with a host app. Avoid mutating language defaults during tests.
+    if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+      AppLanguage.applySavedPreference()
+    }
+  }
 
   var body: some Scene {
     // This is a menu bar app (LSUIElement + `.accessory` activation policy). We intentionally
@@ -21,8 +29,10 @@ struct SettingsView: View {
   @StateObject private var postProcessingSettings = PostProcessingSettingsModel()
 
   @AppStorage("avkb.persistHistoryEnabled") private var persistHistoryEnabled: Bool = false
+  @AppStorage(AppLanguage.preferenceKey) private var appLanguageRawValue: String = AppLanguage.system.rawValue
 
   @State private var showDisablePersistAlert = false
+  @State private var showLanguageRestartAlert = false
 
   private var persistHistoryBinding: Binding<Bool> {
     Binding(
@@ -38,16 +48,62 @@ struct SettingsView: View {
     )
   }
 
+  private var languageBinding: Binding<AppLanguage> {
+    Binding(
+      get: { AppLanguage(rawValue: appLanguageRawValue) ?? .system },
+      set: { newValue in
+        let oldValue = AppLanguage(rawValue: appLanguageRawValue) ?? .system
+        appLanguageRawValue = newValue.rawValue
+        AppLanguage.applyToAppleLanguages(newValue)
+        if newValue != oldValue {
+          showLanguageRestartAlert = true
+        }
+      }
+    )
+  }
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 16) {
-        Text("AI Voice Keyboard")
+        Text("settings.app_title")
           .font(.title2)
 
-        GroupBox("Permissions") {
+        GroupBox("settings.language.section_title") {
+          VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+              Text("settings.language.picker_label")
+                .frame(width: 160, alignment: .leading)
+
+              Picker("", selection: languageBinding) {
+                Text("settings.language.option.system").tag(AppLanguage.system)
+                Text("settings.language.option.en").tag(AppLanguage.en)
+                Text("settings.language.option.zh_hans").tag(AppLanguage.zhHans)
+                Text("settings.language.option.zh_hant").tag(AppLanguage.zhHant)
+              }
+              .labelsHidden()
+
+              Spacer()
+            }
+
+            Text("settings.language.restart_hint")
+              .font(.footnote)
+              .foregroundStyle(.secondary)
+          }
+          .padding(.top, 6)
+        }
+        .alert("settings.language.restart_title", isPresented: $showLanguageRestartAlert) {
+          Button("settings.language.restart_action_later", role: .cancel) {}
+          Button("settings.language.restart_action_quit") {
+            NSApp.terminate(nil)
+          }
+        } message: {
+          Text("settings.language.restart_message")
+        }
+
+        GroupBox("settings.section.permissions") {
           VStack(alignment: .leading, spacing: 12) {
             HStack {
-              Button("Open Permissions Guide…") {
+              Button("permissions_guide.settings_button") {
                 NotificationCenter.default.post(name: .avkbShowPermissionsGuide, object: nil)
               }
               Spacer()
@@ -78,40 +134,40 @@ struct SettingsView: View {
             )
 
             HStack {
-              Button("Refresh") {
+              Button("permissions_guide.action.refresh") {
                 permissions.refresh()
               }
               Spacer()
             }
 
-            Text("Tip: If a permission is denied, use “Open System Settings” to grant it, then click Refresh.")
+            Text("settings.permissions.tip_denied")
               .font(.footnote)
               .foregroundStyle(.secondary)
 
-            Text("Accessibility is a trust setting (not a one-tap permission). After enabling it in System Settings, return to this app and click Refresh. Some apps may require refocus or relaunch to take effect.")
+            Text("settings.permissions.tip_accessibility")
               .font(.footnote)
               .foregroundStyle(.secondary)
           }
           .padding(.top, 6)
         }
 
-        GroupBox("History") {
+        GroupBox("settings.section.history") {
           VStack(alignment: .leading, spacing: 8) {
-            Toggle("Persist History to Disk", isOn: persistHistoryBinding)
+            Toggle("settings.history.persist_toggle", isOn: persistHistoryBinding)
 
-            Text("Off (default): history stays in memory and is cleared on restart. On: history is saved to disk and persists across restarts.")
+            Text("settings.history.persist_desc")
               .font(.footnote)
               .foregroundStyle(.secondary)
           }
           .padding(.top, 6)
         }
 
-        GroupBox("Speech-to-text (STT)") {
+        GroupBox("settings.section.stt") {
           STTSettingsSection(model: sttSettings)
             .padding(.top, 6)
         }
 
-        GroupBox("Post-processing / LLM") {
+        GroupBox("settings.section.post_processing") {
           PostProcessingSettingsSection(model: postProcessingSettings)
             .padding(.top, 6)
         }
@@ -122,17 +178,17 @@ struct SettingsView: View {
     .onAppear {
       permissions.refresh()
     }
-    .alert("Turn Off Persistence?", isPresented: $showDisablePersistAlert) {
-      Button("Cancel", role: .cancel) {}
-      Button("Turn Off (Keep File)") {
+    .alert("settings.history.alert_disable_title", isPresented: $showDisablePersistAlert) {
+      Button("common.action.cancel", role: .cancel) {}
+      Button("settings.history.alert_action_turn_off_keep") {
         persistHistoryEnabled = false
       }
-      Button("Turn Off (Delete File)", role: .destructive) {
+      Button("settings.history.alert_action_turn_off_delete", role: .destructive) {
         persistHistoryEnabled = false
         NotificationCenter.default.post(name: .avkbHistoryDeletePersistedFile, object: nil)
       }
     } message: {
-      Text("Turning off persistence keeps history in memory for this session, but it will not be restored after restart. You can also delete the saved history file now.")
+      Text("settings.history.alert_disable_message")
     }
   }
 }
@@ -160,28 +216,28 @@ private struct PermissionRow: View {
         // Accessibility isn't a normal permission flow: it's a trust setting that usually requires
         // manual enabling in System Settings and then returning to the app + refreshing.
         if status.isSatisfied {
-          Text("OK")
+          Text("permissions_guide.status.ok")
             .foregroundStyle(.secondary)
         } else {
-          Button("Prompt") { Task { await onRequest() } }
-          Button("Open System Settings") { onOpenSystemSettings() }
+          Button("permissions_guide.action.prompt") { Task { await onRequest() } }
+          Button("permissions_guide.action.open_system_settings") { onOpenSystemSettings() }
         }
       } else {
         if status == .notDetermined {
-          Button("Request") {
+          Button("permissions_guide.action.request") {
             Task { await onRequest() }
           }
         } else if status == .denied || status == .restricted {
-          Button("Open System Settings") {
+          Button("permissions_guide.action.open_system_settings") {
             onOpenSystemSettings()
           }
         } else if status == .authorized {
-          Text("OK")
+          Text("permissions_guide.status.ok")
             .foregroundStyle(.secondary)
         } else {
           // For unknown/unsupported states, avoid calling request blindly.
-          Button("Refresh") { onRefresh() }
-          Button("Open System Settings") { onOpenSystemSettings() }
+          Button("permissions_guide.action.refresh") { onRefresh() }
+          Button("permissions_guide.action.open_system_settings") { onOpenSystemSettings() }
         }
       }
     }
@@ -189,11 +245,66 @@ private struct PermissionRow: View {
 
   private var statusText: String {
     if kind == .accessibility {
-      return status.isSatisfied ? "Trusted" : "Not Trusted"
-    }
-    if status == .unknown {
-      return "Unknown (Refresh)"
+      return status.isSatisfied
+        ? NSLocalizedString("permission.status.trusted", comment: "")
+        : NSLocalizedString("permission.status.not_trusted", comment: "")
     }
     return status.displayText
+  }
+}
+
+// MARK: - Language override
+
+private enum AppLanguage: String, CaseIterable, Identifiable {
+  case system = "system"
+  case en = "en"
+  case zhHans = "zh-Hans"
+  case zhHant = "zh-Hant"
+
+  static let preferenceKey = "avkb.language.preference"
+  private static let systemAppleLanguagesBackupKey = "avkb.language.systemAppleLanguagesBackup"
+
+  var id: String { rawValue }
+
+  private var appleLanguageCode: String? {
+    self == .system ? nil : rawValue
+  }
+
+  static func load() -> AppLanguage {
+    let raw = UserDefaults.standard.string(forKey: preferenceKey) ?? AppLanguage.system.rawValue
+    return AppLanguage(rawValue: raw) ?? .system
+  }
+
+  static func applySavedPreference() {
+    applyToAppleLanguages(load())
+  }
+
+  static func applyToAppleLanguages(_ language: AppLanguage) {
+    // `AppleLanguages` affects `Bundle.main.preferredLocalizations`.
+    let defaults = UserDefaults.standard
+    let appleLanguagesKey = "AppleLanguages"
+
+    if let code = language.appleLanguageCode {
+      // Preserve the "system-determined" app language (including per-app language override in
+      // macOS System Settings) so selecting `.system` can restore it.
+      if defaults.object(forKey: systemAppleLanguagesBackupKey) == nil {
+        let existing = defaults.stringArray(forKey: appleLanguagesKey) ?? []
+        defaults.set(existing, forKey: systemAppleLanguagesBackupKey)
+      }
+      defaults.set([code], forKey: appleLanguagesKey)
+      return
+    }
+
+    // `.system`: restore previous AppleLanguages value only if we ever overrode it.
+    guard let backup = defaults.array(forKey: systemAppleLanguagesBackupKey) as? [String] else {
+      return
+    }
+    defer { defaults.removeObject(forKey: systemAppleLanguagesBackupKey) }
+
+    if backup.isEmpty {
+      defaults.removeObject(forKey: appleLanguagesKey)
+    } else {
+      defaults.set(backup, forKey: appleLanguagesKey)
+    }
   }
 }

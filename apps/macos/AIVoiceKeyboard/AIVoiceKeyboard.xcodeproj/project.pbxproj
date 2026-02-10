@@ -46,7 +46,8 @@
 		F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */; };
 		F50FB68F95752C3A13B3B24B /* PostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71293D1E7A37E4654058C669 /* PostProcessor.swift */; };
 		FFA66575B55DD5CC4AA75D6E /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F11769D72E2FB09C9B78D8 /* TextInserter.swift */; };
-/* End PBXBuildFile section */
+		E77747312F9B12A4982C90AC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1BD4E6B2D31AD240B12A26AC /* Localizable.strings */; };
+	/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		57E853819E2599C718D96278 /* PBXContainerItemProxy */ = {
@@ -101,6 +102,9 @@
 		E355B91727EEFB56BA1805A3 /* PermissionsGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsGuideView.swift; sourceTree = "<group>"; };
 		E5F13F940873227C1756DCAC /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
 		F1DC836CE4C710E78E13E9D5 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
+		13ADDC9F5FEE1CC24E4B1D35 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		0768D9FAE71BDAF817BD146A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		44F7C71D7ABFC92C22F33928 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +117,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B5129D0F2C70325F43D0C3EB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E77747312F9B12A4982C90AC /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXGroup section */
 		023D19B8661ECDCC8F81A51D /* Packages */ = {
@@ -201,12 +216,13 @@
 			isa = PBXGroup;
 			children = (
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
-				990332E78C912D3698638D6F /* AppDelegate.swift */,
-				9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
-				2DD65E212905B6BB33840145 /* Info.plist */,
-				DC2AD42EB31C03A5BBD7F4D9 /* HUD */,
-				C25764340DAE45347B4DC680 /* Permissions */,
-				4A92329B06285FF64D19C3B8 /* PostProcessing */,
+					990332E78C912D3698638D6F /* AppDelegate.swift */,
+					9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
+					2DD65E212905B6BB33840145 /* Info.plist */,
+					1BD4E6B2D31AD240B12A26AC /* Localizable.strings */,
+					DC2AD42EB31C03A5BBD7F4D9 /* HUD */,
+					C25764340DAE45347B4DC680 /* Permissions */,
+					4A92329B06285FF64D19C3B8 /* PostProcessing */,
 				5CCD9E7B2CE311BB8ECFDCEC /* Settings */,
 				0D7D8302B4B9FF7545E492B2 /* Speech */,
 				F271F567F7F753E0CEEF261C /* TextInsertion */,
@@ -267,6 +283,7 @@
 			buildConfigurationList = F26CB501690367101D6A1E5E /* Build configuration list for PBXNativeTarget "AIVoiceKeyboard" */;
 			buildPhases = (
 				2CAE9DFFCB78F86EABE050F9 /* Sources */,
+				B5129D0F2C70325F43D0C3EB /* Resources */,
 				934F07DA020B85257327F76C /* Frameworks */,
 			);
 			buildRules = (
@@ -315,6 +332,8 @@
 			knownRegions = (
 				Base,
 				en,
+				zh-Hans,
+				zh-Hant,
 			);
 			mainGroup = 4AED26F803CCEBD4B8EE8CBF;
 			minimizedProjectReferenceProxies = 1;
@@ -392,9 +411,22 @@
 			target = 062C2629EB76BD61C4E83F95 /* AIVoiceKeyboard */;
 			targetProxy = 57E853819E2599C718D96278 /* PBXContainerItemProxy */;
 		};
-/* End PBXTargetDependency section */
+	/* End PBXTargetDependency section */
 
-/* Begin XCBuildConfiguration section */
+	/* Begin PBXVariantGroup section */
+		1BD4E6B2D31AD240B12A26AC /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				13ADDC9F5FEE1CC24E4B1D35 /* en */,
+				0768D9FAE71BDAF817BD146A /* zh-Hans */,
+				44F7C71D7ABFC92C22F33928 /* zh-Hant */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+	/* End PBXVariantGroup section */
+
+	/* Begin XCBuildConfiguration section */
 		5E9C3B42F99B4E4F3F780D3F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {

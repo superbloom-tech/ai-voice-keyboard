@@ -1,0 +1,102 @@
+/* Permissions Guide (#29) */
+
+"permissions_guide.title" = "Permissions Guide";
+"permissions_guide.subtitle" = "To record and insert text into other apps, AI Voice Keyboard needs a few macOS permissions.";
+"permissions_guide.current_provider_label" = "Current STT provider";
+"permissions_guide.current_provider_help" = "Speech Recognition is only required when using Apple Speech.";
+
+"permissions_guide.section.required" = "Required";
+"permissions_guide.section.auto_insert" = "Auto-insert (Recommended)";
+
+"permissions_guide.tag.required" = "Required";
+"permissions_guide.tag.optional" = "Optional";
+"permissions_guide.tag.recommended" = "Recommended";
+
+"permissions_guide.action.request" = "Request";
+"permissions_guide.action.prompt" = "Prompt";
+"permissions_guide.action.open_system_settings" = "Open System Settings";
+"permissions_guide.action.refresh" = "Refresh";
+"permissions_guide.action.done" = "Done";
+"permissions_guide.status.ok" = "OK";
+
+"permissions_guide.help.microphone" = "Needed to record audio.";
+"permissions_guide.help.speech_required" = "Required when using Apple Speech.";
+"permissions_guide.help.speech_optional" = "Only required for Apple Speech. Whisper/Remote do not need this permission.";
+"permissions_guide.help.accessibility" = "Enables auto-insert into other apps. Without it, we will copy text to clipboard and you can press Cmd+V to paste.";
+"permissions_guide.tip.accessibility_trust" = "Tip: Accessibility is a trust setting. After enabling it in System Settings, return to this app and click Refresh.";
+
+/* Menu / window */
+"permissions_guide.menu_item" = "Permissions Guide…";
+"permissions_guide.window_title" = "Permissions Guide";
+"permissions_guide.settings_button" = "Open Permissions Guide…";
+
+/* STT provider names */
+"stt_provider.apple_speech" = "Apple Speech";
+"stt_provider.whisper_local" = "Whisper (Local)";
+"stt_provider.openai_compatible" = "Remote (OpenAI-compatible)";
+
+/* Permission kinds */
+"permission.kind.microphone" = "Microphone";
+"permission.kind.speech_recognition" = "Speech Recognition";
+"permission.kind.accessibility" = "Accessibility";
+
+/* Permission statuses */
+"permission.status.authorized" = "Authorized";
+"permission.status.denied" = "Denied";
+"permission.status.not_determined" = "Not Determined";
+"permission.status.restricted" = "Restricted";
+"permission.status.unknown" = "Unknown";
+"permission.status.trusted" = "Trusted";
+"permission.status.not_trusted" = "Not Trusted";
+
+/* Settings */
+"settings.window_title" = "Settings";
+"settings.app_title" = "AI Voice Keyboard";
+
+"settings.section.permissions" = "Permissions";
+"settings.permissions.tip_denied" = "Tip: If a permission is denied, use “Open System Settings” to grant it, then click Refresh.";
+"settings.permissions.tip_accessibility" = "Accessibility is a trust setting (not a one-tap permission). After enabling it in System Settings, return to this app and click Refresh. Some apps may require refocus or relaunch to take effect.";
+
+"settings.section.history" = "History";
+"settings.history.persist_toggle" = "Persist History to Disk";
+"settings.history.persist_desc" = "Off (default): history stays in memory and is cleared on restart. On: history is saved to disk and persists across restarts.";
+"settings.history.alert_disable_title" = "Turn Off Persistence?";
+"settings.history.alert_disable_message" = "Turning off persistence keeps history in memory for this session, but it will not be restored after restart. You can also delete the saved history file now.";
+"settings.history.alert_action_turn_off_keep" = "Turn Off (Keep File)";
+"settings.history.alert_action_turn_off_delete" = "Turn Off (Delete File)";
+
+"settings.section.stt" = "Speech-to-text (STT)";
+"settings.section.post_processing" = "Post-processing / LLM";
+
+/* Language */
+"settings.language.section_title" = "Language";
+"settings.language.picker_label" = "App language";
+"settings.language.restart_hint" = "Changing language requires restarting the app.";
+"settings.language.option.system" = "System (Auto)";
+"settings.language.option.en" = "English";
+"settings.language.option.zh_hans" = "Chinese (Simplified)";
+"settings.language.option.zh_hant" = "Chinese (Traditional)";
+"settings.language.restart_title" = "Restart Required";
+"settings.language.restart_message" = "Quit and relaunch to apply the new language.";
+"settings.language.restart_action_later" = "Later";
+"settings.language.restart_action_quit" = "Quit Now";
+
+/* Common */
+"common.action.cancel" = "Cancel";
+
+/* Menu */
+"menu.open_settings" = "Open Settings…";
+"menu.quit" = "Quit";
+"menu.history" = "History";
+"menu.history_clear" = "Clear History";
+"menu.history_empty" = "No history yet";
+"menu.toggle_insert" = "Toggle Insert Recording";
+"menu.toggle_edit" = "Toggle Edit Recording";
+"menu.toggle_edit_coming_soon" = "Toggle Edit Recording (Coming soon)";
+"menu.clipboard_restore_original" = "Restore Original Clipboard";
+"menu.dev_add_sample_entry" = "Dev: Add Sample Entry";
+
+/* Errors / warnings */
+"error.permission.microphone_required" = "Microphone required. Use “Open Settings…” from the menu bar.";
+"error.permission.speech_required" = "Speech Recognition required. Use “Open Settings…” from the menu bar.";
+"warning.permission.accessibility_clipboard_fallback" = "Accessibility not enabled: text will be copied to clipboard (press Cmd+V to paste). Enable Accessibility for auto-insert.";

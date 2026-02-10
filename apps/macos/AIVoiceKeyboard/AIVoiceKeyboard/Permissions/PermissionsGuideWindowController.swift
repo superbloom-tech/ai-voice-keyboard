@@ -31,7 +31,7 @@ final class PermissionsGuideWindowController {
     )
 
     let window = NSWindow(contentViewController: hostingController)
-    window.title = "Permissions Guide"
+    window.title = NSLocalizedString("permissions_guide.window_title", comment: "")
     window.styleMask = [.titled, .closable]
     window.center()
     window.isReleasedWhenClosed = false
@@ -58,4 +58,3 @@ private final class PermissionsGuideWindowDelegate: NSObject, NSWindowDelegate {
     onClose()
   }
 }
-

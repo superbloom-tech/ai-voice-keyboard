@@ -126,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     self.permissionWarningMenuItem = permissionWarning
 
     // History: click an entry to copy to clipboard, then user Cmd+V to paste.
-    let historyMenuItem = NSMenuItem(title: "History", action: nil, keyEquivalent: "")
+    let historyMenuItem = NSMenuItem(title: NSLocalizedString("menu.history", comment: ""), action: nil, keyEquivalent: "")
     let historyMenu = NSMenu()
     historyMenuItem.submenu = historyMenu
     menu.addItem(historyMenuItem)
@@ -135,7 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(.separator())
 
     let toggleInsert = NSMenuItem(
-      title: "Toggle Insert Recording",
+      title: NSLocalizedString("menu.toggle_insert", comment: ""),
       action: #selector(toggleInsertRecording),
       keyEquivalent: ""
     )
@@ -143,13 +143,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(toggleInsert)
 
     let toggleEdit = NSMenuItem(
-      title: "Toggle Edit Recording",
+      title: NSLocalizedString("menu.toggle_edit", comment: ""),
       action: #selector(toggleEditRecording),
       keyEquivalent: ""
     )
     toggleEdit.target = self
 #if !DEBUG
-    toggleEdit.title = "Toggle Edit Recording (Coming soon)"
+    toggleEdit.title = NSLocalizedString("menu.toggle_edit_coming_soon", comment: "")
     toggleEdit.isEnabled = false
 #endif
     menu.addItem(toggleEdit)
@@ -170,7 +170,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(.separator())
 
     let settingsItem = NSMenuItem(
-      title: "Open Settings…",
+      title: NSLocalizedString("menu.open_settings", comment: ""),
       action: #selector(openSettings),
       keyEquivalent: ","
     )
@@ -178,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(settingsItem)
 
     let permissionsGuideItem = NSMenuItem(
-      title: "Permissions Guide…",
+      title: NSLocalizedString("permissions_guide.menu_item", comment: ""),
       action: #selector(openPermissionsGuide),
       keyEquivalent: ""
     )
@@ -186,7 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(permissionsGuideItem)
 
     let quitItem = NSMenuItem(
-      title: "Quit",
+      title: NSLocalizedString("menu.quit", comment: ""),
       action: #selector(quit),
       keyEquivalent: "q"
     )
@@ -419,14 +419,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     guard mic.isSatisfied else {
       appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      appState.permissionWarningMessage = NSLocalizedString("error.permission.microphone_required", comment: "")
       permissionsGuideWindowController.show()
       return
     }
 
     if requiresSpeechRecognition, !speech.isSatisfied {
       appState.status = .error
-      appState.permissionWarningMessage = "Speech Recognition required. Use “Open Settings…” from the menu bar."
+      appState.permissionWarningMessage = NSLocalizedString("error.permission.speech_required", comment: "")
       permissionsGuideWindowController.show()
       return
     }
@@ -434,7 +434,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Accessibility is required for reliably pasting into other apps via synthetic Cmd+V.
     // If it's not enabled, we still allow recording/transcription but expect a clipboard-only fallback.
     if !PermissionChecks.status(for: .accessibility).isSatisfied {
-      appState.permissionWarningMessage = "Accessibility not enabled: text will be copied to clipboard (press Cmd+V to paste). Enable Accessibility for auto-insert."
+      appState.permissionWarningMessage = NSLocalizedString("warning.permission.accessibility_clipboard_fallback", comment: "")
     } else {
       appState.permissionWarningMessage = nil
     }
@@ -458,13 +458,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onSuccess()
       } else {
         appState.status = .error
-        appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+        appState.permissionWarningMessage = NSLocalizedString("error.permission.microphone_required", comment: "")
         permissionsGuideWindowController.show()
       }
 
     case .denied, .restricted, .unknown:
       appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      appState.permissionWarningMessage = NSLocalizedString("error.permission.microphone_required", comment: "")
       permissionsGuideWindowController.show()
     }
   }
@@ -661,7 +661,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     if let _ = lastClipboardSnapshot {
       let restore = NSMenuItem(
-        title: "Restore Original Clipboard",
+        title: NSLocalizedString("menu.clipboard_restore_original", comment: ""),
         action: #selector(restoreClipboard(_:)),
         keyEquivalent: ""
       )
@@ -671,12 +671,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
 #if DEBUG
-    let addSample = NSMenuItem(title: "Dev: Add Sample Entry", action: #selector(addSampleHistoryEntry(_:)), keyEquivalent: "")
+    let addSample = NSMenuItem(title: NSLocalizedString("menu.dev_add_sample_entry", comment: ""), action: #selector(addSampleHistoryEntry(_:)), keyEquivalent: "")
     addSample.target = self
     menu.addItem(addSample)
 #endif
 
-    let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistory(_:)), keyEquivalent: "")
+    let clear = NSMenuItem(title: NSLocalizedString("menu.history_clear", comment: ""), action: #selector(clearHistory(_:)), keyEquivalent: "")
     clear.target = self
     clear.isEnabled = !historyStore.entries.isEmpty
     menu.addItem(clear)
@@ -684,7 +684,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(.separator())
 
     if historyStore.entries.isEmpty {
-      let empty = NSMenuItem(title: "No history yet", action: nil, keyEquivalent: "")
+      let empty = NSMenuItem(title: NSLocalizedString("menu.history_empty", comment: ""), action: nil, keyEquivalent: "")
       empty.isEnabled = false
       menu.addItem(empty)
       return
@@ -781,7 +781,7 @@ final class SettingsWindowController {
     let hostingController = NSHostingController(rootView: settingsView)
 
     let window = NSWindow(contentViewController: hostingController)
-    window.title = "Settings"
+    window.title = NSLocalizedString("settings.window_title", comment: "")
     window.styleMask = [.titled, .closable]
     window.center()
     window.isReleasedWhenClosed = false
