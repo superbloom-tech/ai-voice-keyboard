@@ -2,24 +2,52 @@ import XCTest
 @testable import AIVoiceKeyboard
 
 final class PostProcessingConfigProviderTests: XCTestCase {
-  func testAPIKeyNamespaceIsSeparatedByPreset() {
-    var config = PostProcessingConfig.default
-    config.refinerProviderFormat = .openAICompatible
+  func testAPIKeyKeychainKeyUsesLowercasedUUID() {
+    let id = UUID(uuidString: "E5C06A08-3D23-4B3D-9D2E-6A8A2A0A3A4D")!
+    let profile = RefinerProfile(
+      id: id,
+      name: "p",
+      enabled: true,
+      providerFormat: .openAICompatible,
+      openAICompatiblePreset: .openai,
+      baseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
+      model: "gpt-4o-mini",
+      timeout: 2.0,
+      fallbackBehavior: .returnOriginal
+    )
 
-    config.refinerOpenAICompatiblePreset = .openai
-    XCTAssertEqual(config.llmAPIKeyNamespace, "openai")
-
-    config.refinerOpenAICompatiblePreset = .openrouter
-    XCTAssertEqual(config.llmAPIKeyNamespace, "openrouter")
-
-    config.refinerOpenAICompatiblePreset = .custom
-    XCTAssertEqual(config.llmAPIKeyNamespace, "custom")
+    XCTAssertEqual(profile.apiKeyKeychainKey, "llm.profile.\(id.uuidString.lowercased())")
   }
 
-  func testAPIKeyNamespaceAnthropic() {
-    var config = PostProcessingConfig.default
-    config.refinerProviderFormat = .anthropic
-    XCTAssertEqual(config.llmAPIKeyNamespace, "anthropic")
+  func testAPIKeyKeychainKeyDiffersBetweenProfiles() {
+    let a = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+    let b = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+
+    let p1 = RefinerProfile(
+      id: a,
+      name: "a",
+      enabled: true,
+      providerFormat: .openAICompatible,
+      openAICompatiblePreset: .openai,
+      baseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
+      model: nil,
+      timeout: 2.0,
+      fallbackBehavior: .returnOriginal
+    )
+
+    let p2 = RefinerProfile(
+      id: b,
+      name: "b",
+      enabled: true,
+      providerFormat: .openAICompatible,
+      openAICompatiblePreset: .openai,
+      baseURL: PostProcessingConfig.defaultOpenAIBaseURLString,
+      model: nil,
+      timeout: 2.0,
+      fallbackBehavior: .returnOriginal
+    )
+
+    XCTAssertNotEqual(p1.apiKeyKeychainKey, p2.apiKeyKeychainKey)
   }
 
   func testResolvedBaseURLFallsBackToDefaultsWhenEmpty() {
@@ -37,4 +65,3 @@ final class PostProcessingConfigProviderTests: XCTestCase {
     XCTAssertEqual(config.resolvedRefinerBaseURLString, PostProcessingConfig.defaultAnthropicBaseURLString)
   }
 }
-

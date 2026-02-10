@@ -32,5 +32,19 @@ final class ProviderConfigurationCodableTests: XCTestCase {
     let decoded = try JSONDecoder().decode(STTProviderConfiguration.self, from: data)
     XCTAssertEqual(decoded, cfg)
   }
-}
 
+  func testWhisperLocalSTTProviderConfigurationCodableRoundTrip() throws {
+    let cfg = STTProviderConfiguration.whisperLocal(
+      WhisperLocalConfiguration(
+        executablePath: "/opt/homebrew/bin/whisper",
+        model: "turbo",
+        language: "en",
+        inferenceTimeoutSeconds: 60
+      )
+    )
+
+    let data = try JSONEncoder().encode(cfg)
+    let decoded = try JSONDecoder().decode(STTProviderConfiguration.self, from: data)
+    XCTAssertEqual(decoded, cfg)
+  }
+}

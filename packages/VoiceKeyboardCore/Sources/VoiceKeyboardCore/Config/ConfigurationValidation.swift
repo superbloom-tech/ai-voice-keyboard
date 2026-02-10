@@ -79,6 +79,21 @@ public extension OpenAICompatibleSTTConfiguration {
   }
 }
 
+public extension WhisperLocalConfiguration {
+  func validate() -> [ConfigurationValidationIssue] {
+    var issues: [ConfigurationValidationIssue] = []
+
+    issues += ConfigurationValidation.validateNonEmpty(model, field: "model")
+    issues += ConfigurationValidation.validateTimeout(inferenceTimeoutSeconds, field: "inferenceTimeoutSeconds")
+
+    if let executablePath {
+      issues += ConfigurationValidation.validateNonEmpty(executablePath, field: "executablePath")
+    }
+
+    return issues
+  }
+}
+
 public extension LLMProviderConfiguration {
   func validate() -> [ConfigurationValidationIssue] {
     switch self {
@@ -93,9 +108,10 @@ public extension STTProviderConfiguration {
     switch self {
     case .appleSpeech:
       return []
+    case .whisperLocal(let cfg):
+      return cfg.validate()
     case .openAICompatible(let cfg):
       return cfg.validate()
     }
   }
 }
-

@@ -17,6 +17,7 @@ struct AIVoiceKeyboardApp: App {
 
 struct SettingsView: View {
   @StateObject private var permissions = PermissionCenter()
+  @StateObject private var sttSettings = STTSettingsModel()
   @StateObject private var postProcessingSettings = PostProcessingSettingsModel()
 
   @AppStorage("avkb.persistHistoryEnabled") private var persistHistoryEnabled: Bool = false
@@ -96,6 +97,11 @@ struct SettingsView: View {
               .foregroundStyle(.secondary)
           }
           .padding(.top, 6)
+        }
+
+        GroupBox("Speech-to-text (STT)") {
+          STTSettingsSection(model: sttSettings)
+            .padding(.top, 6)
         }
 
         GroupBox("Post-processing / LLM") {

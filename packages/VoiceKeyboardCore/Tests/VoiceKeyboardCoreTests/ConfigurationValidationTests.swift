@@ -39,5 +39,40 @@ final class ConfigurationValidationTests: XCTestCase {
     let issues = cfg.validate()
     XCTAssertTrue(issues.contains { $0.field == "baseURL" && $0.severity == .warning })
   }
-}
 
+  func testValidateWhisperLocalConfigurationRejectsEmptyModel() throws {
+    let cfg = WhisperLocalConfiguration(
+      executablePath: nil,
+      model: "  ",
+      language: nil,
+      inferenceTimeoutSeconds: 30
+    )
+
+    let issues = cfg.validate()
+    XCTAssertTrue(issues.contains { $0.field == "model" && $0.severity == .error })
+  }
+
+  func testValidateWhisperLocalConfigurationTimeoutMustBePositive() throws {
+    let cfg = WhisperLocalConfiguration(
+      executablePath: nil,
+      model: "turbo",
+      language: nil,
+      inferenceTimeoutSeconds: 0
+    )
+
+    let issues = cfg.validate()
+    XCTAssertTrue(issues.contains { $0.field == "inferenceTimeoutSeconds" && $0.severity == .error })
+  }
+
+  func testValidateWhisperLocalConfigurationExecutablePathMustNotBeWhitespaceWhenProvided() throws {
+    let cfg = WhisperLocalConfiguration(
+      executablePath: "   ",
+      model: "turbo",
+      language: nil,
+      inferenceTimeoutSeconds: 30
+    )
+
+    let issues = cfg.validate()
+    XCTAssertTrue(issues.contains { $0.field == "executablePath" && $0.severity == .error })
+  }
+}
