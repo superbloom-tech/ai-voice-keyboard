@@ -26,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static let persistHistoryEnabled = "avkb.persistHistoryEnabled"
   }
 
+  private enum OnboardingKeys {
+    static let permissionsGuideShownOnce = "avkb.onboarding.permissionsGuideShownOnce"
+  }
+
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
   private var recordingHUD: RecordingHUDController?
@@ -58,6 +62,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private let activationPolicyController = ActivationPolicyController()
   private lazy var settingsWindowController = SettingsWindowController(
+    activationPolicyController: activationPolicyController
+  )
+  private lazy var permissionsGuideWindowController = PermissionsGuideWindowController(
     activationPolicyController: activationPolicyController
   )
 
@@ -119,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     self.permissionWarningMenuItem = permissionWarning
 
     // History: click an entry to copy to clipboard, then user Cmd+V to paste.
-    let historyMenuItem = NSMenuItem(title: "History", action: nil, keyEquivalent: "")
+    let historyMenuItem = NSMenuItem(title: NSLocalizedString("menu.history", comment: ""), action: nil, keyEquivalent: "")
     let historyMenu = NSMenu()
     historyMenuItem.submenu = historyMenu
     menu.addItem(historyMenuItem)
@@ -128,7 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(.separator())
 
     let toggleInsert = NSMenuItem(
-      title: "Toggle Insert Recording",
+      title: NSLocalizedString("menu.toggle_insert", comment: ""),
       action: #selector(toggleInsertRecording),
       keyEquivalent: ""
     )
@@ -136,13 +143,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(toggleInsert)
 
     let toggleEdit = NSMenuItem(
-      title: "Toggle Edit Recording",
+      title: NSLocalizedString("menu.toggle_edit", comment: ""),
       action: #selector(toggleEditRecording),
       keyEquivalent: ""
     )
     toggleEdit.target = self
 #if !DEBUG
-    toggleEdit.title = "Toggle Edit Recording (Coming soon)"
+    toggleEdit.title = NSLocalizedString("menu.toggle_edit_coming_soon", comment: "")
     toggleEdit.isEnabled = false
 #endif
     menu.addItem(toggleEdit)
@@ -163,15 +170,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(.separator())
 
     let settingsItem = NSMenuItem(
-      title: "Open Settings…",
+      title: NSLocalizedString("menu.open_settings", comment: ""),
       action: #selector(openSettings),
       keyEquivalent: ","
     )
     settingsItem.target = self
     menu.addItem(settingsItem)
 
+    let permissionsGuideItem = NSMenuItem(
+      title: NSLocalizedString("permissions_guide.menu_item", comment: ""),
+      action: #selector(openPermissionsGuide),
+      keyEquivalent: ""
+    )
+    permissionsGuideItem.target = self
+    menu.addItem(permissionsGuideItem)
+
     let quitItem = NSMenuItem(
-      title: "Quit",
+      title: NSLocalizedString("menu.quit", comment: ""),
       action: #selector(quit),
       keyEquivalent: "q"
     )
@@ -294,7 +309,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
       .store(in: &cancellables)
 
+    NotificationCenter.default
+      .publisher(for: .avkbShowPermissionsGuide)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.permissionsGuideWindowController.show()
+      }
+      .store(in: &cancellables)
+
     rebuildHistoryMenu()
+
+    maybeShowPermissionsGuideOnLaunch()
   }
 
   func applicationWillTerminate(_ notification: Notification) {
@@ -394,20 +419,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     guard mic.isSatisfied else {
       appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      appState.permissionWarningMessage = NSLocalizedString("error.permission.microphone_required", comment: "")
+      permissionsGuideWindowController.show()
       return
     }
 
     if requiresSpeechRecognition, !speech.isSatisfied {
       appState.status = .error
-      appState.permissionWarningMessage = "Speech Recognition required. Use “Open Settings…” from the menu bar."
+      appState.permissionWarningMessage = NSLocalizedString("error.permission.speech_required", comment: "")
+      permissionsGuideWindowController.show()
       return
     }
 
     // Accessibility is required for reliably pasting into other apps via synthetic Cmd+V.
     // If it's not enabled, we still allow recording/transcription but expect a clipboard-only fallback.
     if !PermissionChecks.status(for: .accessibility).isSatisfied {
-      appState.permissionWarningMessage = "Accessibility not enabled: will copy to clipboard; enable Accessibility for auto-insert"
+      appState.permissionWarningMessage = NSLocalizedString("warning.permission.accessibility_clipboard_fallback", comment: "")
     } else {
       appState.permissionWarningMessage = nil
     }
@@ -431,12 +458,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onSuccess()
       } else {
         appState.status = .error
-        appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+        appState.permissionWarningMessage = NSLocalizedString("error.permission.microphone_required", comment: "")
+        permissionsGuideWindowController.show()
       }
 
     case .denied, .restricted, .unknown:
       appState.status = .error
-      appState.permissionWarningMessage = "Microphone required. Use “Open Settings…” from the menu bar."
+      appState.permissionWarningMessage = NSLocalizedString("error.permission.microphone_required", comment: "")
+      permissionsGuideWindowController.show()
     }
   }
 
@@ -577,6 +606,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     settingsWindowController.show()
   }
 
+  @objc private func openPermissionsGuide() {
+    permissionsGuideWindowController.show()
+  }
+
   @objc private func quit() {
     NSApp.terminate(nil)
   }
@@ -628,7 +661,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     if let _ = lastClipboardSnapshot {
       let restore = NSMenuItem(
-        title: "Restore Original Clipboard",
+        title: NSLocalizedString("menu.clipboard_restore_original", comment: ""),
         action: #selector(restoreClipboard(_:)),
         keyEquivalent: ""
       )
@@ -638,12 +671,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
 #if DEBUG
-    let addSample = NSMenuItem(title: "Dev: Add Sample Entry", action: #selector(addSampleHistoryEntry(_:)), keyEquivalent: "")
+    let addSample = NSMenuItem(title: NSLocalizedString("menu.dev_add_sample_entry", comment: ""), action: #selector(addSampleHistoryEntry(_:)), keyEquivalent: "")
     addSample.target = self
     menu.addItem(addSample)
 #endif
 
-    let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistory(_:)), keyEquivalent: "")
+    let clear = NSMenuItem(title: NSLocalizedString("menu.history_clear", comment: ""), action: #selector(clearHistory(_:)), keyEquivalent: "")
     clear.target = self
     clear.isEnabled = !historyStore.entries.isEmpty
     menu.addItem(clear)
@@ -651,7 +684,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(.separator())
 
     if historyStore.entries.isEmpty {
-      let empty = NSMenuItem(title: "No history yet", action: nil, keyEquivalent: "")
+      let empty = NSMenuItem(title: NSLocalizedString("menu.history_empty", comment: ""), action: nil, keyEquivalent: "")
       empty.isEnabled = false
       menu.addItem(empty)
       return
@@ -678,6 +711,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     image?.isTemplate = true
     button.image = image
     button.toolTip = "AI Voice Keyboard (\(status.rawValue))"
+  }
+
+  private func maybeShowPermissionsGuideOnLaunch() {
+    let shownOnce = UserDefaults.standard.bool(forKey: OnboardingKeys.permissionsGuideShownOnce)
+
+    let cfg = STTProviderStore.load()
+    let requiresSpeechRecognition: Bool = {
+      if case .appleSpeech = cfg { return true }
+      return false
+    }()
+
+    let micSatisfied = PermissionChecks.status(for: .microphone).isSatisfied
+    let speechSatisfied = PermissionChecks.status(for: .speechRecognition).isSatisfied
+
+    // Show on first launch, or when a required permission is missing.
+    let shouldShow = !shownOnce || !micSatisfied || (requiresSpeechRecognition && !speechSatisfied)
+    guard shouldShow else { return }
+
+    UserDefaults.standard.set(true, forKey: OnboardingKeys.permissionsGuideShownOnce)
+    permissionsGuideWindowController.show()
   }
 }
 
@@ -728,7 +781,7 @@ final class SettingsWindowController {
     let hostingController = NSHostingController(rootView: settingsView)
 
     let window = NSWindow(contentViewController: hostingController)
-    window.title = "Settings"
+    window.title = NSLocalizedString("settings.window_title", comment: "")
     window.styleMask = [.titled, .closable]
     window.center()
     window.isReleasedWhenClosed = false
@@ -963,6 +1016,8 @@ extension Notification.Name {
   static let avkbHistoryAppendEdit = Notification.Name("avkb.history.append.edit")
 
   static let avkbHistoryDeletePersistedFile = Notification.Name("avkb.history.persist.deleteFile")
+
+  static let avkbShowPermissionsGuide = Notification.Name("avkb.permissions.guide.show")
 }
 
 struct PasteboardSnapshot: Sendable {

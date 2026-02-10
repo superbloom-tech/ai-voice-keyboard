@@ -13,7 +13,7 @@ struct STTSettingsSection: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Picker("Provider", selection: $model.selectedProvider) {
+      Picker("settings.stt.provider_label", selection: $model.selectedProvider) {
         ForEach(STTProviderKind.allCases) { kind in
           Text(kind.displayName).tag(kind)
         }
@@ -23,55 +23,55 @@ struct STTSettingsSection: View {
 
       switch model.selectedProvider {
       case .appleSpeech:
-        Text("Apple Speech")
+        Text("stt_provider.apple_speech")
           .font(.headline)
 
-        TextField("Locale identifier (optional, e.g. en_US, zh_CN)", text: $model.appleSpeechLocaleIdentifier)
+        TextField("settings.stt.apple_speech.locale_identifier_placeholder", text: $model.appleSpeechLocaleIdentifier)
 
-        Text("Requires macOS Speech Recognition permission.")
+        Text("settings.stt.apple_speech.permission_hint")
           .font(.footnote)
           .foregroundStyle(.secondary)
 
       case .whisperLocal:
-        Text("Whisper (Local CLI)")
+        Text("stt_provider.whisper_local")
           .font(.headline)
 
-        TextField("Whisper executable path (optional)", text: $model.whisperExecutablePath)
+        TextField("settings.stt.whisper.executable_path_placeholder", text: $model.whisperExecutablePath)
 
-        TextField("Model (e.g. turbo, base, small)", text: $model.whisperModel)
+        TextField("settings.stt.whisper.model_placeholder", text: $model.whisperModel)
 
-        TextField("Language (optional, e.g. en, zh)", text: $model.whisperLanguage)
+        TextField("settings.stt.whisper.language_placeholder", text: $model.whisperLanguage)
 
         HStack {
-          Text("Timeout (seconds)")
+          Text("common.timeout_seconds")
           Spacer()
           TextField("", value: $model.whisperTimeoutSeconds, formatter: Self.secondsFormatter)
             .frame(width: 72)
             .multilineTextAlignment(.trailing)
         }
 
-        Text("Install: `brew install openai-whisper` (provides the `whisper` CLI). First run may download model files and take longer.")
+        Text("settings.stt.whisper.install_hint")
           .font(.footnote)
           .foregroundStyle(.secondary)
 
       case .openAICompatible:
-        Text("Remote (OpenAI-compatible)")
+        Text("stt_provider.openai_compatible")
           .font(.headline)
 
         HStack(spacing: 12) {
-          TextField("Base URL (e.g. https://api.openai.com/v1)", text: $model.remoteBaseURLString)
-          Button("Reset") { model.applyDefaultRemoteBaseURL() }
+          TextField("settings.stt.remote.base_url_placeholder", text: $model.remoteBaseURLString)
+          Button("common.action.reset") { model.applyDefaultRemoteBaseURL() }
         }
 
-        TextField("Model (e.g. whisper-1)", text: $model.remoteModel)
+        TextField("settings.stt.remote.model_placeholder", text: $model.remoteModel)
 
         HStack(spacing: 12) {
-          TextField("API Key ID (Keychain key)", text: $model.remoteApiKeyId)
-          Button("Default") { model.remoteApiKeyId = "openai" }
+          TextField("settings.stt.remote.api_key_id_placeholder", text: $model.remoteApiKeyId)
+          Button("common.action.default") { model.remoteApiKeyId = "openai" }
         }
 
         HStack {
-          Text("Timeout (seconds)")
+          Text("common.timeout_seconds")
           Spacer()
           TextField("", value: $model.remoteTimeoutSeconds, formatter: Self.secondsFormatter)
             .frame(width: 72)
@@ -79,17 +79,23 @@ struct STTSettingsSection: View {
         }
 
         VStack(alignment: .leading, spacing: 8) {
-          Text("API Key (Keychain)")
+          Text("common.api_key_keychain_title")
             .font(.headline)
 
-          Text("Status: \(model.hasRemoteAPIKey ? "Saved" : "Not saved") (ID: \(model.remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)))")
+          let statusKey = model.hasRemoteAPIKey ? "common.status.saved" : "common.status.not_saved"
+          let statusLine = String(
+            format: NSLocalizedString("settings.stt.remote.api_key.status_format", comment: ""),
+            NSLocalizedString(statusKey, comment: ""),
+            model.remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+          )
+          Text(statusLine)
             .font(.footnote)
             .foregroundStyle(model.hasRemoteAPIKey ? .green : .secondary)
 
           HStack(spacing: 12) {
-            SecureField("Enter new API key", text: $model.apiKeyDraft)
-            Button("Save") { model.saveAPIKey() }
-            Button("Delete") { model.deleteAPIKey() }
+            SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
+            Button("common.action.save") { model.saveAPIKey() }
+            Button("common.action.delete") { model.deleteAPIKey() }
           }
 
           if let message = model.apiKeyMessage, !message.isEmpty {
@@ -99,7 +105,7 @@ struct STTSettingsSection: View {
           }
         }
 
-        Text("Privacy: audio is sent to the configured provider.")
+        Text("settings.stt.remote.privacy_hint")
           .font(.footnote)
           .foregroundStyle(.secondary)
       }
@@ -112,4 +118,3 @@ struct STTSettingsSection: View {
     }
   }
 }
-

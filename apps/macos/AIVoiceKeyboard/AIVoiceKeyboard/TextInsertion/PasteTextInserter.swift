@@ -39,6 +39,13 @@ final class PasteTextInserter: TextInserter {
     pb.clearContents()
     pb.setString(trimmed, forType: .string)
 
+    // If Accessibility is not enabled, synthetic Cmd+V is usually blocked by the OS.
+    // In that case we intentionally keep the transcript in clipboard and let the user paste manually.
+    if !PermissionChecks.status(for: .accessibility).isSatisfied {
+      NSLog("[Insert] Accessibility not enabled; skipped synthetic Cmd+V (clipboard populated)")
+      return
+    }
+
     try postPasteKeyChord()
   }
 

@@ -47,14 +47,16 @@ final class PostProcessingSettingsModel: ObservableObject {
 
   func updateSelectedProfileName(_ name: String) {
     let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-    let final = trimmed.isEmpty ? "Profile" : trimmed
+    let final = trimmed.isEmpty
+      ? NSLocalizedString("settings.post_processing.profile.default_name", comment: "")
+      : trimmed
     if let idx = config.refinerProfiles.firstIndex(where: { $0.id == config.selectedRefinerProfileId }) {
       config.refinerProfiles[idx].name = final
     }
   }
 
   func addProfile() {
-    let name = makeUniqueProfileName(base: "New Profile")
+    let name = makeUniqueProfileName(base: NSLocalizedString("settings.post_processing.profile.new_name", comment: ""))
     let profile = RefinerProfile(
       name: name,
       enabled: false,
@@ -76,7 +78,8 @@ final class PostProcessingSettingsModel: ObservableObject {
 
     var copy = selected
     copy.id = UUID()
-    copy.name = makeUniqueProfileName(base: "\(selected.name) Copy")
+    let copySuffix = NSLocalizedString("settings.post_processing.profile.copy_suffix", comment: "")
+    copy.name = makeUniqueProfileName(base: "\(selected.name) \(copySuffix)")
     config.refinerProfiles.append(copy)
     config.selectedRefinerProfileId = copy.id
 
@@ -144,7 +147,7 @@ final class PostProcessingSettingsModel: ObservableObject {
     let key = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !key.isEmpty else {
       apiKeyMessageIsError = true
-      apiKeyMessage = "API key cannot be empty."
+      apiKeyMessage = NSLocalizedString("common.error.api_key_empty", comment: "")
       return
     }
 
@@ -152,7 +155,11 @@ final class PostProcessingSettingsModel: ObservableObject {
       try config.saveLLMAPIKey(key)
       apiKeyDraft = ""
       apiKeyMessageIsError = false
-      apiKeyMessage = "API key saved for profile: \(selectedProfile?.name ?? "Unknown")."
+      let profileName = selectedProfile?.name ?? NSLocalizedString("common.value.unknown", comment: "")
+      apiKeyMessage = String(
+        format: NSLocalizedString("settings.post_processing.api_key.saved_format", comment: ""),
+        profileName
+      )
     } catch {
       apiKeyMessageIsError = true
       apiKeyMessage = error.localizedDescription
@@ -164,7 +171,11 @@ final class PostProcessingSettingsModel: ObservableObject {
       try config.deleteLLMAPIKey()
       apiKeyDraft = ""
       apiKeyMessageIsError = false
-      apiKeyMessage = "API key deleted for profile: \(selectedProfile?.name ?? "Unknown")."
+      let profileName = selectedProfile?.name ?? NSLocalizedString("common.value.unknown", comment: "")
+      apiKeyMessage = String(
+        format: NSLocalizedString("settings.post_processing.api_key.deleted_format", comment: ""),
+        profileName
+      )
     } catch {
       apiKeyMessageIsError = true
       apiKeyMessage = error.localizedDescription
@@ -185,14 +196,14 @@ final class PostProcessingSettingsModel: ObservableObject {
         timeout: max(0.5, config.refinerTimeout)
       )
       testMessageIsError = false
-      testMessage = "Success."
+      testMessage = NSLocalizedString("common.status.success", comment: "")
     } catch let error as LLMAPIError {
       testMessageIsError = true
       switch error {
       case .invalidAPIKey:
-        testMessage = "Invalid API key."
+        testMessage = NSLocalizedString("common.error.invalid_api_key", comment: "")
       case .timeout:
-        testMessage = "Timeout."
+        testMessage = NSLocalizedString("common.error.timeout", comment: "")
       case .networkError:
         testMessage = error.localizedDescription
       case .apiError:

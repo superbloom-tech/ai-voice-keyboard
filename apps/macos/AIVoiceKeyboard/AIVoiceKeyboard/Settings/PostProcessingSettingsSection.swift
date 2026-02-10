@@ -65,23 +65,23 @@ struct PostProcessingSettingsSection: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Toggle("Post-processing Enabled", isOn: $model.config.enabled)
+      Toggle("settings.post_processing.enabled_toggle", isOn: $model.config.enabled)
 
       Divider()
 
-      Text("Cleaner")
+      Text("settings.post_processing.cleaner.header")
         .font(.headline)
 
-      Toggle("Enabled", isOn: $model.config.cleanerEnabled)
+      Toggle("common.enabled", isOn: $model.config.cleanerEnabled)
 
-      Picker("Rules preset", selection: $model.config.cleanerRulesRawValue) {
-        Text("Basic").tag(TextCleaner.CleaningRules.basic.rawValue)
-        Text("Standard").tag(TextCleaner.CleaningRules.standard.rawValue)
-        Text("Aggressive").tag(TextCleaner.CleaningRules.aggressive.rawValue)
+      Picker("settings.post_processing.cleaner.rules_preset", selection: $model.config.cleanerRulesRawValue) {
+        Text("settings.post_processing.cleaner.rules.basic").tag(TextCleaner.CleaningRules.basic.rawValue)
+        Text("settings.post_processing.cleaner.rules.standard").tag(TextCleaner.CleaningRules.standard.rawValue)
+        Text("settings.post_processing.cleaner.rules.aggressive").tag(TextCleaner.CleaningRules.aggressive.rawValue)
       }
 
       HStack {
-        Text("Timeout (seconds)")
+        Text("common.timeout_seconds")
         Spacer()
         TextField("", value: $model.config.cleanerTimeout, formatter: Self.secondsFormatter)
           .frame(width: 72)
@@ -90,30 +90,30 @@ struct PostProcessingSettingsSection: View {
 
       Divider()
 
-      Text("LLM Refiner")
+      Text("settings.post_processing.refiner.header")
         .font(.headline)
 
       HStack(spacing: 12) {
-        Picker("Profile", selection: $model.config.selectedRefinerProfileId) {
+        Picker("settings.post_processing.refiner.profile_picker", selection: $model.config.selectedRefinerProfileId) {
           ForEach(model.config.refinerProfiles, id: \.id) { profile in
             Text(profile.name).tag(profile.id)
           }
         }
         .frame(maxWidth: 320)
 
-        Button("Add") { model.addProfile() }
-        Button("Duplicate") { model.duplicateSelectedProfile() }
-        Button("Delete") { model.deleteSelectedProfile() }
+        Button("common.action.add") { model.addProfile() }
+        Button("common.action.duplicate") { model.duplicateSelectedProfile() }
+        Button("common.action.delete") { model.deleteSelectedProfile() }
           .disabled(model.config.refinerProfiles.count <= 1)
 
         Spacer()
       }
 
-      TextField("Profile name", text: profileNameBinding)
+      TextField("settings.post_processing.refiner.profile_name_placeholder", text: profileNameBinding)
 
-      Toggle("Enabled", isOn: $model.config.refinerEnabled)
+      Toggle("common.enabled", isOn: $model.config.refinerEnabled)
 
-      Picker("Provider format", selection: $model.config.refinerProviderFormat) {
+      Picker("settings.post_processing.refiner.provider_format", selection: $model.config.refinerProviderFormat) {
         ForEach(LLMProviderFormat.allCases, id: \.self) { format in
           Text(format.displayName).tag(format)
         }
@@ -121,7 +121,7 @@ struct PostProcessingSettingsSection: View {
       .modifier(ProviderFormatChangeHandler(model: model))
 
       if model.config.refinerProviderFormat == .openAICompatible {
-        Picker("Preset", selection: $model.config.refinerOpenAICompatiblePreset) {
+        Picker("settings.post_processing.refiner.preset", selection: $model.config.refinerOpenAICompatiblePreset) {
           ForEach(OpenAICompatiblePreset.allCases, id: \.self) { preset in
             Text(preset.displayName).tag(preset)
           }
@@ -129,16 +129,16 @@ struct PostProcessingSettingsSection: View {
         .modifier(PresetChangeHandler(model: model))
       }
 
-      TextField("Base URL (e.g. https://api.openai.com/v1)", text: $model.config.refinerBaseURL)
+      TextField("settings.post_processing.refiner.base_url_placeholder", text: $model.config.refinerBaseURL)
 
-      Text("Endpoint is appended automatically: OpenAI-compatible => /chat/completions, Anthropic => /messages")
+      Text("settings.post_processing.refiner.endpoint_hint")
         .font(.footnote)
         .foregroundStyle(.secondary)
 
-      TextField("Model", text: refinerModelBinding)
+      TextField("settings.post_processing.refiner.model_placeholder", text: refinerModelBinding)
 
       HStack {
-        Text("Timeout (seconds)")
+        Text("common.timeout_seconds")
         Spacer()
         TextField("", value: $model.config.refinerTimeout, formatter: Self.secondsFormatter)
           .frame(width: 72)
@@ -146,18 +146,25 @@ struct PostProcessingSettingsSection: View {
       }
 
       VStack(alignment: .leading, spacing: 8) {
-        Text("API Key (Keychain)")
+        Text("common.api_key_keychain_title")
           .font(.headline)
 
         let saved = model.config.hasLLMAPIKey()
-        Text("Status: \(saved ? "Saved" : "Not saved") (Profile: \(model.selectedProfile?.name ?? "Unknown"))")
+        let statusKey = saved ? "common.status.saved" : "common.status.not_saved"
+        let profileName = model.selectedProfile?.name ?? NSLocalizedString("common.value.unknown", comment: "")
+        let statusLine = String(
+          format: NSLocalizedString("settings.post_processing.api_key.status_format", comment: ""),
+          NSLocalizedString(statusKey, comment: ""),
+          profileName
+        )
+        Text(statusLine)
           .font(.footnote)
           .foregroundStyle(saved ? .green : .secondary)
 
         HStack(spacing: 12) {
-          SecureField("Enter new API key", text: $model.apiKeyDraft)
-          Button("Save") { model.saveAPIKey() }
-          Button("Delete") { model.deleteAPIKey() }
+          SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
+          Button("common.action.save") { model.saveAPIKey() }
+          Button("common.action.delete") { model.deleteAPIKey() }
         }
 
         if let message = model.apiKeyMessage, !message.isEmpty {
@@ -169,19 +176,19 @@ struct PostProcessingSettingsSection: View {
 
       Divider()
 
-      Text("Fallback")
+      Text("settings.post_processing.fallback.header")
         .font(.headline)
 
-      Picker("Behavior", selection: $model.config.fallbackBehaviorRawValue) {
-        Text("Return original").tag(0)
-        Text("Return last valid").tag(1)
-        Text("Throw error").tag(2)
+      Picker("settings.post_processing.fallback.behavior_picker", selection: $model.config.fallbackBehaviorRawValue) {
+        Text("settings.post_processing.fallback.behavior.return_original").tag(0)
+        Text("settings.post_processing.fallback.behavior.return_last_valid").tag(1)
+        Text("settings.post_processing.fallback.behavior.throw_error").tag(2)
       }
 
       Divider()
 
       HStack(spacing: 12) {
-        Button(model.isTesting ? "Testing..." : "Test") {
+        Button(model.isTesting ? LocalizedStringKey("common.status.testing") : LocalizedStringKey("common.action.test")) {
           Task { await model.runTest() }
         }
         .disabled(model.isTesting)
@@ -200,7 +207,7 @@ struct PostProcessingSettingsSection: View {
           .foregroundStyle(model.testMessageIsError ? .red : .secondary)
       }
 
-      Text("Privacy: Refiner sends text to the selected third-party provider.")
+      Text("settings.post_processing.privacy_hint")
         .font(.footnote)
         .foregroundStyle(.secondary)
     }

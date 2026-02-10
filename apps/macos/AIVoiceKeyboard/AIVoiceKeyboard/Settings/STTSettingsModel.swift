@@ -12,11 +12,11 @@ enum STTProviderKind: String, CaseIterable, Identifiable {
   var displayName: String {
     switch self {
     case .appleSpeech:
-      return "Apple Speech"
+      return NSLocalizedString("stt_provider.apple_speech", comment: "")
     case .whisperLocal:
-      return "Whisper (Local CLI)"
+      return NSLocalizedString("stt_provider.whisper_local", comment: "")
     case .openAICompatible:
-      return "Remote (OpenAI-compatible)"
+      return NSLocalizedString("stt_provider.openai_compatible", comment: "")
     }
   }
 }
@@ -91,14 +91,14 @@ final class STTSettingsModel: ObservableObject {
     let id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else {
       apiKeyMessageIsError = true
-      apiKeyMessage = "API key id cannot be empty."
+      apiKeyMessage = NSLocalizedString("settings.stt.remote.api_key.error_id_empty", comment: "")
       return
     }
 
     let key = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !key.isEmpty else {
       apiKeyMessageIsError = true
-      apiKeyMessage = "API key cannot be empty."
+      apiKeyMessage = NSLocalizedString("common.error.api_key_empty", comment: "")
       return
     }
 
@@ -106,7 +106,10 @@ final class STTSettingsModel: ObservableObject {
       try STTKeychain.save(apiKey: key, apiKeyId: id)
       apiKeyDraft = ""
       apiKeyMessageIsError = false
-      apiKeyMessage = "API key saved for id: \(id)."
+      apiKeyMessage = String(
+        format: NSLocalizedString("settings.stt.remote.api_key.saved_format", comment: ""),
+        id
+      )
     } catch {
       apiKeyMessageIsError = true
       apiKeyMessage = error.localizedDescription
@@ -121,7 +124,10 @@ final class STTSettingsModel: ObservableObject {
       try STTKeychain.delete(apiKeyId: id)
       apiKeyDraft = ""
       apiKeyMessageIsError = false
-      apiKeyMessage = "API key deleted for id: \(id)."
+      apiKeyMessage = String(
+        format: NSLocalizedString("settings.stt.remote.api_key.deleted_format", comment: ""),
+        id
+      )
     } catch {
       apiKeyMessageIsError = true
       apiKeyMessage = error.localizedDescription
@@ -177,7 +183,7 @@ final class STTSettingsModel: ObservableObject {
 
     guard let cfg = currentConfiguration() else {
       configMessageIsError = true
-      configMessage = "Invalid STT configuration (e.g. Base URL must be a valid URL)."
+      configMessage = NSLocalizedString("settings.stt.validation.invalid_config", comment: "")
       return
     }
 
@@ -185,7 +191,7 @@ final class STTSettingsModel: ObservableObject {
     let issues = cfg.validate()
     if issues.contains(where: { $0.severity == .error }) {
       configMessageIsError = true
-      configMessage = "STT configuration has errors. Please review the fields."
+      configMessage = NSLocalizedString("settings.stt.validation.has_errors", comment: "")
       return
     }
 

@@ -11,9 +11,9 @@ enum LLMProviderFormat: String, Codable, CaseIterable {
   var displayName: String {
     switch self {
     case .openAICompatible:
-      return "OpenAI-compatible"
+      return NSLocalizedString("llm_provider_format.openai_compatible", comment: "")
     case .anthropic:
-      return "Anthropic"
+      return NSLocalizedString("llm_provider_format.anthropic", comment: "")
     }
   }
 
@@ -44,11 +44,11 @@ enum OpenAICompatiblePreset: String, Codable, CaseIterable {
   var displayName: String {
     switch self {
     case .openai:
-      return "OpenAI"
+      return NSLocalizedString("llm_openai_preset.openai", comment: "")
     case .openrouter:
-      return "OpenRouter"
+      return NSLocalizedString("llm_openai_preset.openrouter", comment: "")
     case .custom:
-      return "Custom"
+      return NSLocalizedString("llm_openai_preset.custom", comment: "")
     }
   }
 
@@ -69,4 +69,3 @@ enum OpenAICompatiblePreset: String, Codable, CaseIterable {
     )
   }
 }
-
