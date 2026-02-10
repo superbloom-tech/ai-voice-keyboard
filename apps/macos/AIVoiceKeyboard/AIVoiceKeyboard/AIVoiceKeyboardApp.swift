@@ -17,6 +17,7 @@ struct AIVoiceKeyboardApp: App {
 
 struct SettingsView: View {
   @StateObject private var permissions = PermissionCenter()
+  @StateObject private var postProcessingSettings = PostProcessingSettingsModel()
 
   @AppStorage("avkb.persistHistoryEnabled") private var persistHistoryEnabled: Bool = false
 
@@ -37,67 +38,74 @@ struct SettingsView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("AI Voice Keyboard")
-        .font(.title2)
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        Text("AI Voice Keyboard")
+          .font(.title2)
 
-      Text("Permissions")
-        .font(.headline)
+        GroupBox("Permissions") {
+          VStack(alignment: .leading, spacing: 12) {
+            PermissionRow(
+              kind: .microphone,
+              status: permissions.statuses[.microphone] ?? .unknown,
+              onRequest: { await permissions.request(.microphone) },
+              onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .microphone) },
+              onRefresh: { permissions.refresh() }
+            )
 
-      PermissionRow(
-        kind: .microphone,
-        status: permissions.statuses[.microphone] ?? .unknown,
-        onRequest: { await permissions.request(.microphone) },
-        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .microphone) },
-        onRefresh: { permissions.refresh() }
-      )
+            PermissionRow(
+              kind: .speechRecognition,
+              status: permissions.statuses[.speechRecognition] ?? .unknown,
+              onRequest: { await permissions.request(.speechRecognition) },
+              onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .speechRecognition) },
+              onRefresh: { permissions.refresh() }
+            )
 
-      PermissionRow(
-        kind: .speechRecognition,
-        status: permissions.statuses[.speechRecognition] ?? .unknown,
-        onRequest: { await permissions.request(.speechRecognition) },
-        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .speechRecognition) },
-        onRefresh: { permissions.refresh() }
-      )
+            PermissionRow(
+              kind: .accessibility,
+              status: permissions.statuses[.accessibility] ?? .unknown,
+              onRequest: { await permissions.request(.accessibility) },
+              onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .accessibility) },
+              onRefresh: { permissions.refresh() }
+            )
 
-      PermissionRow(
-        kind: .accessibility,
-        status: permissions.statuses[.accessibility] ?? .unknown,
-        onRequest: { await permissions.request(.accessibility) },
-        onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .accessibility) },
-        onRefresh: { permissions.refresh() }
-      )
+            HStack {
+              Button("Refresh") {
+                permissions.refresh()
+              }
+              Spacer()
+            }
 
-      Divider()
+            Text("Tip: If a permission is denied, use “Open System Settings” to grant it, then click Refresh.")
+              .font(.footnote)
+              .foregroundStyle(.secondary)
 
-      Text("History")
-        .font(.headline)
-
-      Toggle("Persist History to Disk", isOn: persistHistoryBinding)
-
-      Text("Off (default): history stays in memory and is cleared on restart. On: history is saved to disk and persists across restarts.")
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-
-      Divider()
-
-      HStack {
-        Button("Refresh") {
-          permissions.refresh()
+            Text("Accessibility is a trust setting (not a one-tap permission). After enabling it in System Settings, return to this app and click Refresh. Some apps may require refocus or relaunch to take effect.")
+              .font(.footnote)
+              .foregroundStyle(.secondary)
+          }
+          .padding(.top, 6)
         }
-        Spacer()
+
+        GroupBox("History") {
+          VStack(alignment: .leading, spacing: 8) {
+            Toggle("Persist History to Disk", isOn: persistHistoryBinding)
+
+            Text("Off (default): history stays in memory and is cleared on restart. On: history is saved to disk and persists across restarts.")
+              .font(.footnote)
+              .foregroundStyle(.secondary)
+          }
+          .padding(.top, 6)
+        }
+
+        GroupBox("Post-processing / LLM") {
+          PostProcessingSettingsSection(model: postProcessingSettings)
+            .padding(.top, 6)
+        }
       }
-
-      Text("Tip: If a permission is denied, use “Open System Settings” to grant it, then click Refresh.")
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-
-      Text("Accessibility is a trust setting (not a one-tap permission). After enabling it in System Settings, return to this app and click Refresh. Some apps may require refocus or relaunch to take effect.")
-        .font(.footnote)
-        .foregroundStyle(.secondary)
+      .padding(20)
     }
-    .padding(20)
-    .frame(width: 520, height: 400)
+    .frame(width: 560, height: 780)
     .onAppear {
       permissions.refresh()
     }

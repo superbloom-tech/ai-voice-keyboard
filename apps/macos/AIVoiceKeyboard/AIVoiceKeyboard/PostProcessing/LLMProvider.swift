@@ -8,6 +8,7 @@
 import Foundation
 
 /// Supported LLM providers
+@available(*, deprecated, message: "Replaced by LLMProviderFormat/OpenAICompatiblePreset (Issue #35). Kept only for backward-compatible decoding.")
 enum LLMProvider: String, Codable, CaseIterable {
   case openai = "openai"
   case anthropic = "anthropic"

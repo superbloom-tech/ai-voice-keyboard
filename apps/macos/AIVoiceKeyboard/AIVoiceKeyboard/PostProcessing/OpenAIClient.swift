@@ -4,21 +4,25 @@ import Foundation
 final class OpenAIClient: LLMAPIClient {
   private let apiKey: String
   private let model: String
-  private let baseURL: URL
+  private let endpointURL: URL
+  
+  private static let defaultBaseURL = URL(string: "https://api.openai.com/v1")!
+  private static let endpointPath = "/chat/completions"
   
   /// Initialize OpenAI client
   /// - Parameters:
   ///   - apiKey: OpenAI API key
   ///   - model: Model to use (e.g., "gpt-4o-mini", "gpt-4o")
-  init(apiKey: String, model: String = "gpt-4o-mini") {
+  ///   - baseURL: Base URL (e.g., "https://api.openai.com/v1", "https://openrouter.ai/api/v1")
+  init(apiKey: String, model: String = "gpt-4o-mini", baseURL: URL = OpenAIClient.defaultBaseURL) {
     self.apiKey = apiKey
     self.model = model
-    self.baseURL = URL(string: "https://api.openai.com/v1/chat/completions")!
+    self.endpointURL = LLMEndpoint.makeEndpointURL(baseURL: baseURL, endpointPath: Self.endpointPath)
   }
   
   func refine(text: String, systemPrompt: String, timeout: TimeInterval) async throws -> String {
-    NSLog("[PostProcessing][OpenAIClient] Starting refine request — model: %@, baseURL: %@, timeout: %.1fs, text length: %d",
-          model, baseURL.absoluteString, timeout, text.count)
+    NSLog("[PostProcessing][OpenAIClient] Starting refine request — model: %@, endpoint: %@, timeout: %.1fs, text length: %d",
+          model, endpointURL.absoluteString, timeout, text.count)
     do {
       // Build request
       let request = try buildRequest(text: text, systemPrompt: systemPrompt)
@@ -53,7 +57,7 @@ final class OpenAIClient: LLMAPIClient {
   // MARK: - Private Methods
   
   private func buildRequest(text: String, systemPrompt: String) throws -> URLRequest {
-    var request = URLRequest(url: baseURL)
+    var request = URLRequest(url: endpointURL)
     request.httpMethod = "POST"
     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
