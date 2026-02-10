@@ -6,12 +6,10 @@ actor WhisperCLISTTEngine: STTEngine {
   enum EngineError: LocalizedError {
     case alreadyRunning
     case recorderFailed
-    case recordingFileNotFound
-    case recordingEmpty
     case whisperExecutableNotFound
     case processFailed(exitCode: Int32, stderr: String)
     case timedOut(seconds: Double)
-    case outputNotFound(debug: String)
+    case outputNotFound
     case noResult
 
     var errorDescription: String? {
@@ -20,10 +18,6 @@ actor WhisperCLISTTEngine: STTEngine {
         return "Whisper session already running"
       case .recorderFailed:
         return "Failed to start audio recording"
-      case .recordingFileNotFound:
-        return "Recording file not found. Check microphone input/device and retry."
-      case .recordingEmpty:
-        return "No audio captured. Check microphone input/device and retry."
       case .whisperExecutableNotFound:
         return "Whisper CLI not found. Install it (e.g. `brew install openai-whisper`) or set the executable path in Settings."
       case .processFailed(let exitCode, let stderr):
@@ -33,12 +27,8 @@ actor WhisperCLISTTEngine: STTEngine {
         return "Whisper CLI failed (exit code: \(exitCode)): \(stderr)"
       case .timedOut(let seconds):
         return "Whisper transcription timed out after \(Int(seconds))s. Try a smaller model or increase the timeout in Settings."
-      case .outputNotFound(let debug):
-        let trimmed = debug.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-          return "Whisper output file not found"
-        }
-        return "Whisper output file not found. \(trimmed)"
+      case .outputNotFound:
+        return "Whisper output file not found"
       case .noResult:
         return "No transcription result"
       }
@@ -78,16 +68,9 @@ actor WhisperCLISTTEngine: STTEngine {
 
     let recordingURL = dir.appendingPathComponent("recording.m4a", isDirectory: false)
 
-    let sampleRate = DefaultAudioInputDevice.nominalSampleRate() ?? 44_100
-    if let deviceName = DefaultAudioInputDevice.name() {
-      NSLog("[WhisperCLI] Using default input: %@ (nominal sampleRate: %.0f Hz)", deviceName, sampleRate)
-    }
-
     let settings: [String: Any] = [
       AVFormatIDKey: kAudioFormatMPEG4AAC,
-      // Match the default input device's nominal sample rate when possible; Bluetooth mics (e.g. AirPods)
-      // often run at 24kHz and can fail to start if forced to an unsupported rate.
-      AVSampleRateKey: sampleRate,
+      AVSampleRateKey: 16_000,
       AVNumberOfChannelsKey: 1,
       AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ]
@@ -159,8 +142,6 @@ actor WhisperCLISTTEngine: STTEngine {
   }
 
   private func transcribe(audioURL: URL, workingDirectory: URL) async throws -> String {
-    let recordingBytes = try await waitForRecordingBytes(audioURL: audioURL)
-
     let outDir = workingDirectory.appendingPathComponent("whisper-out", isDirectory: true)
     try FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
 
@@ -186,7 +167,6 @@ actor WhisperCLISTTEngine: STTEngine {
     let process = Process()
     process.executableURL = executableURL
     process.arguments = args
-    process.environment = resolvedSubprocessEnvironment()
 
     let stdout = Pipe()
     let stderr = Pipe()
@@ -203,88 +183,11 @@ actor WhisperCLISTTEngine: STTEngine {
     let baseName = audioURL.deletingPathExtension().lastPathComponent
     let outFile = outDir.appendingPathComponent("\(baseName).txt", isDirectory: false)
 
-    if FileManager.default.fileExists(atPath: outFile.path) {
-      return try String(contentsOf: outFile, encoding: .utf8)
+    guard FileManager.default.fileExists(atPath: outFile.path) else {
+      throw EngineError.outputNotFound
     }
 
-    // Some whisper versions may change naming; best-effort fallback to a single txt file.
-    let outFiles = try? FileManager.default.contentsOfDirectory(at: outDir, includingPropertiesForKeys: nil)
-    let txtFiles = outFiles?.filter { $0.pathExtension.lowercased() == "txt" } ?? []
-    if txtFiles.count == 1 {
-      return try String(contentsOf: txtFiles[0], encoding: .utf8)
-    }
-
-    throw EngineError.outputNotFound(debug: buildOutputNotFoundDebug(
-      expectedOutFile: outFile,
-      outDir: outDir,
-      recordingBytes: recordingBytes,
-      stdout: result.stdout,
-      stderr: result.stderr
-    ))
-  }
-
-  private func waitForRecordingBytes(audioURL: URL) async throws -> Int64 {
-    let fm = FileManager.default
-    guard fm.fileExists(atPath: audioURL.path) else {
-      throw EngineError.recordingFileNotFound
-    }
-
-    // AVAudioRecorder can report `record() == true` while the underlying AudioQueue fails to start.
-    // Poll briefly for the file to become non-empty before invoking whisper.
-    var lastSize: Int64 = 0
-    for _ in 0..<10 {
-      lastSize = (try? fm.attributesOfItem(atPath: audioURL.path)[.size] as? NSNumber)?.int64Value ?? 0
-      if lastSize > 0 { return lastSize }
-      try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
-    }
-
-    throw EngineError.recordingEmpty
-  }
-
-  private func buildOutputNotFoundDebug(
-    expectedOutFile: URL,
-    outDir: URL,
-    recordingBytes: Int64,
-    stdout: String,
-    stderr: String
-  ) -> String {
-    var parts: [String] = []
-    parts.append("recordingBytes=\(recordingBytes)")
-    parts.append("expected=\(expectedOutFile.lastPathComponent)")
-
-    if let files = try? FileManager.default.contentsOfDirectory(atPath: outDir.path) {
-      if files.isEmpty {
-        parts.append("outDirFiles=[]")
-      } else {
-        let joined = files.sorted().prefix(10).joined(separator: ",")
-        parts.append("outDirFiles=[\(joined)\(files.count > 10 ? ",..." : "")]")
-      }
-    }
-
-    let stdoutLine = firstNonEmptyLine(stdout)
-    if !stdoutLine.isEmpty {
-      parts.append("stdout=\(abbreviate(stdoutLine, maxLen: 300))")
-    }
-    let stderrLine = firstNonEmptyLine(stderr)
-    if !stderrLine.isEmpty {
-      parts.append("stderr=\(abbreviate(stderrLine, maxLen: 300))")
-    }
-
-    parts.append("tip=Whisper may have skipped the audio (e.g. ffmpeg decode error). Try running `whisper <file>` manually to see full output.")
-    return parts.joined(separator: " | ")
-  }
-
-  private func firstNonEmptyLine(_ s: String) -> String {
-    for line in s.split(whereSeparator: \.isNewline) {
-      let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-      if !trimmed.isEmpty { return trimmed }
-    }
-    return ""
-  }
-
-  private func abbreviate(_ s: String, maxLen: Int) -> String {
-    guard s.count > maxLen else { return s }
-    return String(s.prefix(maxLen)) + "..."
+    return try String(contentsOf: outFile, encoding: .utf8)
   }
 
   private func resolveWhisperExecutable() -> (URL, [String]) {
@@ -306,36 +209,6 @@ actor WhisperCLISTTEngine: STTEngine {
 
     // Fallback: rely on PATH resolution (e.g. in CI/dev shells).
     return (URL(fileURLWithPath: "/usr/bin/env"), ["whisper"])
-  }
-
-  private func resolvedSubprocessEnvironment() -> [String: String] {
-    // GUI apps don't reliably inherit user shell PATH, and `openai-whisper` shells out to `ffmpeg`.
-    // Ensure Homebrew install locations are on PATH so whisper can find ffmpeg.
-    var env = ProcessInfo.processInfo.environment
-
-    let defaultSystemPath = "/usr/bin:/bin:/usr/sbin:/sbin"
-    let existingPath = env["PATH"]?.trimmingCharacters(in: .whitespacesAndNewlines)
-    let basePath = (existingPath?.isEmpty == false) ? existingPath! : defaultSystemPath
-
-    let extraPaths = [
-      "/opt/homebrew/bin",
-      "/usr/local/bin"
-    ]
-
-    // Preserve ordering while de-duplicating.
-    var seen: Set<String> = []
-    var finalParts: [String] = []
-
-    for part in (extraPaths + basePath.split(separator: ":").map(String.init)) {
-      let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard !trimmed.isEmpty else { continue }
-      guard !seen.contains(trimmed) else { continue }
-      seen.insert(trimmed)
-      finalParts.append(trimmed)
-    }
-
-    env["PATH"] = finalParts.joined(separator: ":")
-    return env
   }
 
   private struct ProcessRunResult: Sendable {
@@ -396,3 +269,4 @@ actor WhisperCLISTTEngine: STTEngine {
     }
   }
 }
+
