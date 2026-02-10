@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import SwiftUI
 import Dispatch
+import VoiceKeyboardCore
 
 @MainActor
 final class AppState: ObservableObject {
@@ -33,7 +34,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   // Insert-only v0.1 pipeline.
   private let inserter: TextInserter = PasteTextInserter()
-  private var transcriber: AppleSpeechTranscriber?
+  private let sttSession = PushToTalkSTTSession()
+  private var activeSTTContext: STTEngineFactory.EngineContext?
   
   // Post-processing pipeline (Issue #26)
   private var postProcessingPipeline: PostProcessingPipeline?
@@ -68,12 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     NSApp.setActivationPolicy(.accessory)
-
-    do {
-      transcriber = try AppleSpeechTranscriber()
-    } catch {
-      transcriber = nil
-    }
     
     // Setup post-processing pipeline (Issue #26)
     setupPostProcessingPipeline()
@@ -353,7 +349,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       await self.ensureInsertPermissionsOrShowError { [weak self] in
         guard let self else { return }
         do {
-          try self.startTranscription()
+          try await self.startTranscription()
           self.appState.status = .recordingInsert
         } catch {
           self.appState.status = .error
@@ -378,12 +374,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
-  private func ensureInsertPermissionsOrShowError(onSuccess: @escaping () -> Void) async {
+  private func ensureInsertPermissionsOrShowError(onSuccess: @escaping () async -> Void) async {
+    let providerConfig = STTProviderStore.load()
+    let requiresSpeechRecognition: Bool = {
+      if case .appleSpeech = providerConfig { return true }
+      return false
+    }()
+
     // Insert-only v0.1 requires microphone + speech recognition permissions.
     if PermissionChecks.status(for: .microphone) == .notDetermined {
       _ = await PermissionChecks.request(.microphone)
     }
-    if PermissionChecks.status(for: .speechRecognition) == .notDetermined {
+    if requiresSpeechRecognition, PermissionChecks.status(for: .speechRecognition) == .notDetermined {
       _ = await PermissionChecks.request(.speechRecognition)
     }
 
@@ -396,7 +398,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    guard speech.isSatisfied else {
+    if requiresSpeechRecognition, !speech.isSatisfied {
       appState.status = .error
       appState.permissionWarningMessage = "Speech Recognition required. Use “Open Settings…” from the menu bar."
       return
@@ -410,7 +412,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       appState.permissionWarningMessage = nil
     }
 
-    onSuccess()
+    await onSuccess()
   }
 
   private func ensureMicrophonePermissionOrShowError(onSuccess: @escaping () -> Void) async {
@@ -510,19 +512,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
-  private func startTranscription() throws {
-    guard let transcriber else {
-      throw NSError(domain: "AIVoiceKeyboard", code: 1, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
+  private func startTranscription() async throws {
+    let cfg = STTProviderStore.load()
+    let ctx = STTEngineFactory.make(config: cfg)
+    activeSTTContext = ctx
+    do {
+      try await sttSession.start(engine: ctx.engine, locale: ctx.locale)
+    } catch {
+      activeSTTContext = nil
+      throw error
     }
-    try transcriber.start()
   }
 
   private func stopTranscriptionAndInsert() async throws -> (finalText: String, rawText: String?, processingResult: ProcessingResult?) {
-    guard let transcriber else {
-      throw NSError(domain: "AIVoiceKeyboard", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
-    }
+    let timeout = activeSTTContext?.stopTimeoutSeconds ?? 30.0
+    defer { activeSTTContext = nil }
 
-    let rawText = try await transcriber.stop(timeoutSeconds: 2.0)
+    let rawText = try await sttSession.stop(timeoutSeconds: timeout)
     NSLog("[PostProcessing] Raw transcription: \"%@\" (length: %d)", rawText, rawText.count)
 
     // Apply post-processing if enabled (Issue #26)

@@ -69,8 +69,39 @@ public struct OpenAICompatibleSTTConfiguration: Codable, Equatable, Sendable {
   }
 }
 
+public struct WhisperLocalConfiguration: Codable, Equatable, Sendable {
+  /// Optional absolute path to the `whisper` executable.
+  ///
+  /// When nil, clients may attempt auto-detection (e.g. Homebrew default paths).
+  public var executablePath: String?
+
+  /// Whisper model name (e.g. "turbo", "base", "small").
+  public var model: String
+
+  /// Optional language code for transcription (e.g. "en", "zh").
+  ///
+  /// When nil, clients may enable auto language detection.
+  public var language: String?
+
+  /// Max wall-clock time allowed for running local inference.
+  public var inferenceTimeoutSeconds: Double
+
+  public init(
+    executablePath: String? = nil,
+    model: String = "turbo",
+    language: String? = nil,
+    inferenceTimeoutSeconds: Double = 60
+  ) {
+    self.executablePath = executablePath
+    self.model = model
+    self.language = language
+    self.inferenceTimeoutSeconds = inferenceTimeoutSeconds
+  }
+}
+
 public enum STTProviderConfiguration: Codable, Equatable, Sendable {
   case appleSpeech(AppleSpeechConfiguration)
+  case whisperLocal(WhisperLocalConfiguration)
   case openAICompatible(OpenAICompatibleSTTConfiguration)
 
   private enum CodingKeys: String, CodingKey {
@@ -84,6 +115,9 @@ public enum STTProviderConfiguration: Codable, Equatable, Sendable {
     case .appleSpeech(let cfg):
       try container.encode("apple_speech", forKey: .type)
       try container.encode(cfg, forKey: .config)
+    case .whisperLocal(let cfg):
+      try container.encode("whisper_local", forKey: .type)
+      try container.encode(cfg, forKey: .config)
     case .openAICompatible(let cfg):
       try container.encode("openai_compatible", forKey: .type)
       try container.encode(cfg, forKey: .config)
@@ -96,6 +130,8 @@ public enum STTProviderConfiguration: Codable, Equatable, Sendable {
     switch type {
     case "apple_speech":
       self = .appleSpeech(try container.decode(AppleSpeechConfiguration.self, forKey: .config))
+    case "whisper_local":
+      self = .whisperLocal(try container.decode(WhisperLocalConfiguration.self, forKey: .config))
     case "openai_compatible":
       self = .openAICompatible(try container.decode(OpenAICompatibleSTTConfiguration.self, forKey: .config))
     default:
@@ -107,4 +143,3 @@ public enum STTProviderConfiguration: Codable, Equatable, Sendable {
     }
   }
 }
-

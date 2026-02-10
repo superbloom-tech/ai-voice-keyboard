@@ -13,7 +13,7 @@ Pre-alpha（仓库初始化中）。
   - Insert（语音输入）：录音 -> STT -> 轻量润色 -> 写入光标位置
   - Edit（语音编辑）：选区 -> 录音说编辑指令 -> 生成改写稿 -> 预览对比 -> 确认替换
 - Provider 可配置：
-  - STT：Apple Speech +（后续）云端 STT Provider
+  - STT：Apple Speech（默认）/ Whisper（本地 CLI）/ Remote STT（OpenAI-compatible）
   - LLM：用户自配 API（多 Provider 适配）
 - 历史记录：仅记录本 App 产生的识别/改写历史；并在我们临时覆盖剪贴板时保存“覆盖前剪贴板快照”，防止丢剪贴板
 - 菜单栏图标随状态变化（Idle/Recording/Processing/Preview/Error）
@@ -34,7 +34,34 @@ cd packages/VoiceKeyboardCore
 swift test
 ```
 
+## STT Providers
+
+本项目支持可切换的 STT Provider（在 macOS App 的 Settings 中配置）：
+
+### 1) Apple Speech（默认）
+- 纯本地、低延迟
+- 需要 macOS 的 Speech Recognition 权限
+
+### 2) Whisper Local (CLI)
+- 依赖本机安装 `openai-whisper` 提供的 `whisper` 命令
+
+安装：
+```bash
+brew install openai-whisper
+whisper --help
+```
+
+Settings 参数说明：
+- Executable Path：可留空（默认会尝试探测常见 Homebrew 路径）
+- Model：例如 `turbo` / `base` / `small`
+- Language：可留空（自动识别），或填 `en` / `zh` 等
+- Timeout：首次运行可能下载模型文件，建议适当调大
+
+### 3) Remote STT (OpenAI-compatible)
+- 配置 `Base URL` / `Model` / `API Key ID`
+- API Key 明文仅存 Keychain；配置只保存 `API Key ID`
+- Endpoint 会自动拼接：`{baseURL}/audio/transcriptions`
+
 ## Contributing
 
 见 `docs/process/WORKFLOW.md`。
-
