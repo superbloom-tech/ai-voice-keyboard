@@ -27,3 +27,44 @@ final class LLMEndpointTests: XCTestCase {
   }
 }
 
+final class ElevenLabsAPITests: XCTestCase {
+  func testBaseURLV1_AppendsV1WhenMissing() throws {
+    let base = try XCTUnwrap(URL(string: "https://api.elevenlabs.io"))
+    let url = ElevenLabsAPI.baseURLV1(base)
+    XCTAssertEqual(url.absoluteString, "https://api.elevenlabs.io/v1")
+  }
+
+  func testBaseURLV1_KeepsV1() throws {
+    let base = try XCTUnwrap(URL(string: "https://api.elevenlabs.io/v1"))
+    let url = ElevenLabsAPI.baseURLV1(base)
+    XCTAssertEqual(url.absoluteString, "https://api.elevenlabs.io/v1")
+  }
+
+  func testBaseURLV1_HandlesTrailingSlash() throws {
+    let base = try XCTUnwrap(URL(string: "https://api.elevenlabs.io/v1/"))
+    let url = ElevenLabsAPI.baseURLV1(base)
+    XCTAssertEqual(url.absoluteString, "https://api.elevenlabs.io/v1")
+  }
+
+  func testBaseURLV1_TrimsFullEndpoint() throws {
+    let base = try XCTUnwrap(URL(string: "https://api.elevenlabs.io/v1/speech-to-text"))
+    let url = ElevenLabsAPI.baseURLV1(base)
+    XCTAssertEqual(url.absoluteString, "https://api.elevenlabs.io/v1")
+  }
+
+  func testDecodeTranscriptText_ChunkResponse() throws {
+    let json = """
+    {"text":"hello","language_code":"en","language_probability":1.0,"words":[]}
+    """
+    let text = try ElevenLabsSpeechToTextResponse.decodeTranscriptText(from: Data(json.utf8))
+    XCTAssertEqual(text, "hello")
+  }
+
+  func testDecodeTranscriptText_MultichannelResponse() throws {
+    let json = """
+    {"transcripts":[{"text":"a"},{"text":"b"}]}
+    """
+    let text = try ElevenLabsSpeechToTextResponse.decodeTranscriptText(from: Data(json.utf8))
+    XCTAssertEqual(text, "a\nb")
+  }
+}

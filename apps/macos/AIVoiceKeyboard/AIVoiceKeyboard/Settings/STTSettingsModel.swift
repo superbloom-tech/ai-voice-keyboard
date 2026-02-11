@@ -124,14 +124,20 @@ final class STTSettingsModel: ObservableObject {
     return STTKeychain.exists(apiKeyId: id)
   }
 
-  func saveAPIKey() {
-    let id: String
+  private var currentApiKeyIdForEditing: String {
     switch selectedProvider {
     case .elevenLabsREST:
-      id = elevenLabsApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
-    default:
-      id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+      return elevenLabsApiKeyId
+    case .openAICompatible:
+      return remoteApiKeyId
+    case .appleSpeech, .whisperLocal:
+      // Not used by the UI for these providers; default to remote to keep behavior predictable.
+      return remoteApiKeyId
     }
+  }
+
+  func saveAPIKey() {
+    let id = currentApiKeyIdForEditing.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else {
       apiKeyMessageIsError = true
       apiKeyMessage = NSLocalizedString("settings.stt.remote.api_key.error_id_empty", comment: "")
@@ -160,13 +166,7 @@ final class STTSettingsModel: ObservableObject {
   }
 
   func deleteAPIKey() {
-    let id: String
-    switch selectedProvider {
-    case .elevenLabsREST:
-      id = elevenLabsApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
-    default:
-      id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+    let id = currentApiKeyIdForEditing.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else { return }
 
     do {
