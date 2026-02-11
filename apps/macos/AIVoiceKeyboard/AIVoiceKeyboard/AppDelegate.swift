@@ -329,6 +329,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   // MARK: - Actions
 
   @objc private func toggleInsertRecording() {
+    // Prevent overlapping stop/insert operations. Without this guard it's possible to:
+    // - start a new recording while the previous one is still processing, and
+    // - end up inserting multiple transcripts into the target app (appearing as "double insert").
+    if appState.status == .processing {
+      NSSound.beep()
+      NSLog("[Insert] toggleInsertRecording ignored: already processing")
+      return
+    }
+
     if appState.status == .recordingInsert {
       appState.permissionWarningMessage = nil
       appState.status = .processing
@@ -586,10 +595,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       processingResult = nil
     }
 
+    let insertId = UUID().uuidString
+    NSLog("[Insert] Starting insertion (id=%@) finalTextLength=%d", insertId, finalText.count)
+
     // Only capture/offer "Restore Original Clipboard" when we actually mutate the clipboard.
     // (AX insertion does not touch clipboard.)
     let snap = PasteboardSnapshot.capture(from: .general)
     let method = try inserter.insert(text: finalText)
+    NSLog("[Insert] Completed insertion (id=%@) method=%@", insertId, method.rawValue)
     if method == .paste || method == .pasteClipboardOnly {
       lastClipboardSnapshot = snap
       rebuildHistoryMenu()
