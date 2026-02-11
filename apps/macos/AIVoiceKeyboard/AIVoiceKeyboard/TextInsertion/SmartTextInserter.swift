@@ -23,12 +23,19 @@ final class SmartTextInserter: TextInserter {
   @discardableResult
   func insert(text: String) throws -> TextInsertionMethod {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    let preview = String(trimmed.prefix(48))
     let axEnabled = isAccessibilityEnabled()
+#if DEBUG
+    let preview = String(trimmed.prefix(48))
     NSLog("[Insert][Smart] insert requested — accessibility=%@, length=%d, preview=\"%@\"",
           axEnabled ? "YES" : "NO",
           trimmed.count,
           preview)
+#else
+    // Avoid logging user content in production builds.
+    NSLog("[Insert][Smart] insert requested — accessibility=%@, length=%d",
+          axEnabled ? "YES" : "NO",
+          trimmed.count)
+#endif
 
     if axEnabled {
       do {
