@@ -27,7 +27,10 @@ final class PasteTextInserter: TextInserter {
 
   init() {}
 
-  func insert(text: String) throws {
+  @discardableResult
+  func insert(text: String) throws -> TextInsertionMethod {
+    // Insert is designed for natural language dictation; we trim leading/trailing whitespace.
+    // If we add "code mode" later, we should revisit this.
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { throw PasteInsertError.emptyText }
 
@@ -43,10 +46,18 @@ final class PasteTextInserter: TextInserter {
     // In that case we intentionally keep the transcript in clipboard and let the user paste manually.
     if !PermissionChecks.status(for: .accessibility).isSatisfied {
       NSLog("[Insert] Accessibility not enabled; skipped synthetic Cmd+V (clipboard populated)")
-      return
+      return .pasteClipboardOnly
     }
 
-    try postPasteKeyChord()
+    // Best-effort: if synthetic Cmd+V fails, keep clipboard populated so user can paste manually.
+    do {
+      try postPasteKeyChord()
+    } catch {
+      NSLog("[Insert] Synthetic Cmd+V failed (%@); clipboard populated for manual paste.", error.localizedDescription)
+      return .pasteClipboardOnly
+    }
+
+    return .paste
   }
 
   private func postPasteKeyChord() throws {

@@ -37,7 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let historyStore: HistoryStore
 
   // Insert-only v0.1 pipeline.
-  private let inserter: TextInserter = PasteTextInserter()
+  private let inserter: TextInserter = SmartTextInserter()
   private let sttSession = PushToTalkSTTSession()
   private var activeSTTContext: STTEngineFactory.EngineContext?
   
@@ -431,7 +431,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
-    // Accessibility is required for reliably pasting into other apps via synthetic Cmd+V.
+    // Accessibility is required for AX native insertion and for reliably pasting into other apps via synthetic Cmd+V.
     // If it's not enabled, we still allow recording/transcription but expect a clipboard-only fallback.
     if !PermissionChecks.status(for: .accessibility).isSatisfied {
       appState.permissionWarningMessage = NSLocalizedString("warning.permission.accessibility_clipboard_fallback", comment: "")
@@ -586,12 +586,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       processingResult = nil
     }
 
-    // Capture a fresh snapshot so the user can restore whatever they had right before this insert.
-    // (We intentionally do not auto-restore in v0.1.)
-    lastClipboardSnapshot = PasteboardSnapshot.capture(from: .general)
-    rebuildHistoryMenu()
-
-    try inserter.insert(text: finalText)
+    // Only capture/offer "Restore Original Clipboard" when we actually mutate the clipboard.
+    // (AX insertion does not touch clipboard.)
+    let snap = PasteboardSnapshot.capture(from: .general)
+    let method = try inserter.insert(text: finalText)
+    if method == .paste || method == .pasteClipboardOnly {
+      lastClipboardSnapshot = snap
+      rebuildHistoryMenu()
+    }
     
     // Return both raw and final text for history tracking
     return (finalText, processingResult != nil ? rawText : nil, processingResult)
