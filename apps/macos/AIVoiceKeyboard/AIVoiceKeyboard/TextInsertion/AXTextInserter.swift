@@ -49,6 +49,7 @@ final class AXTextInserter: TextInserter {
     guard !trimmed.isEmpty else { throw AXTextInsertError.emptyText }
 
     NSLog("[Insert][AX] attempting insert (length: %d)", trimmed.count)
+    let insertedLen = (trimmed as NSString).length
 
     let systemWide = AXUIElementCreateSystemWide()
     let focused = try copyAXUIElementAttribute(systemWide, kAXFocusedUIElementAttribute as CFString)
@@ -77,10 +78,65 @@ final class AXTextInserter: TextInserter {
 
     // Prefer setting selected text directly when supported.
     if selectedTextSettable {
+      let beforeCharCount = copyIntAttribute(focused, kAXNumberOfCharactersAttribute as CFString)
+      let beforeSelectedRange = copySelectedTextRange(focused)
+
+      if let beforeCharCount {
+        NSLog("[Insert][AX] before AXSelectedText insert — charCount=%d", beforeCharCount)
+      }
+      if let beforeSelectedRange {
+        NSLog(
+          "[Insert][AX] before AXSelectedText insert — selectedRange=(loc=%ld len=%ld)",
+          beforeSelectedRange.location,
+          beforeSelectedRange.length
+        )
+      }
+
       let err = AXUIElementSetAttributeValue(focused, kAXSelectedTextAttribute as CFString, trimmed as CFString)
       if err == .success {
-        NSLog("[Insert][AX] inserted via AXSelectedText (length: %d)", trimmed.count)
-        return .ax
+        // Some apps (e.g. web text areas) can return `.success` but still ignore the write.
+        // Only treat it as failure when we can confidently observe that nothing changed.
+        if let beforeCharCount, let beforeSelectedRange {
+          let expectedCharCount = beforeCharCount - beforeSelectedRange.length + insertedLen
+
+          // Only verify via character count when we expect a length change (otherwise it can be a legit replacement).
+          if expectedCharCount != beforeCharCount {
+            let delaysUs: [useconds_t] = [0, 50_000, 100_000] // total <= 150ms
+            var afterCharCount: Int? = nil
+            for delay in delaysUs {
+              if delay > 0 { usleep(delay) }
+              afterCharCount = copyIntAttribute(focused, kAXNumberOfCharactersAttribute as CFString)
+              if let afterCharCount, afterCharCount != beforeCharCount { break }
+            }
+
+            if let afterCharCount {
+              NSLog(
+                "[Insert][AX] after AXSelectedText insert — charCount=%d (expected=%d, before=%d)",
+                afterCharCount,
+                expectedCharCount,
+                beforeCharCount
+              )
+
+              if afterCharCount == beforeCharCount {
+                NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; falling back to AXValue replacement")
+              } else {
+                NSLog("[Insert][AX] inserted via AXSelectedText (verified by character count)")
+                return .ax
+              }
+            } else {
+              // Cannot verify; be conservative to avoid accidental double-insert.
+              NSLog("[Insert][AX] inserted via AXSelectedText (verification skipped: cannot read char count)")
+              return .ax
+            }
+          } else {
+            NSLog("[Insert][AX] inserted via AXSelectedText (verification skipped: expectedCharCount == beforeCharCount)")
+            return .ax
+          }
+        } else {
+          // Cannot verify; be conservative to avoid accidental double-insert.
+          NSLog("[Insert][AX] inserted via AXSelectedText (verification skipped)")
+          return .ax
+        }
       }
       NSLog("[Insert][AX] set selectedText failed (AXError: %d); falling back.", err.rawValue)
     }
@@ -175,7 +231,6 @@ final class AXTextInserter: TextInserter {
     )
 
     // Best-effort: move the caret to the end of inserted text.
-    let insertedLen = (trimmed as NSString).length
     var newRange = CFRange(location: loc + insertedLen, length: 0)
     if let axNewRange = AXValueCreate(.cfRange, &newRange) {
       _ = AXUIElementSetAttributeValue(focused, kAXSelectedTextRangeAttribute as CFString, axNewRange)
@@ -218,5 +273,23 @@ final class AXTextInserter: TextInserter {
     let err = AXUIElementCopyAttributeValue(element, attribute, &value)
     guard err == .success else { return nil }
     return value as? String
+  }
+
+  private func copyIntAttribute(_ element: AXUIElement, _ attribute: CFString) -> Int? {
+    var value: AnyObject?
+    let err = AXUIElementCopyAttributeValue(element, attribute, &value)
+    guard err == .success, let value else { return nil }
+    return (value as? NSNumber)?.intValue
+  }
+
+  private func copySelectedTextRange(_ element: AXUIElement) -> CFRange? {
+    var value: AnyObject?
+    let err = AXUIElementCopyAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, &value)
+    guard err == .success, let value else { return nil }
+    guard CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
+
+    var range = CFRange()
+    guard AXValueGetValue(value as! AXValue, .cfRange, &range) else { return nil }
+    return range
   }
 }
