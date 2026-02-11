@@ -238,8 +238,6 @@ final class AXTextInserter: TextInserter {
       throw AXTextInsertError.attributeWriteFailed("AXValue", setErr)
     }
 
-    NSLog("[Insert][AX] inserted via AXValue replacement (location: %ld, length: %d)", loc, (trimmed as NSString).length)
-
     // Verify the write actually took effect. Some apps report `success` but do not update the UI/value.
     // We only fall back when we can confirm the value remained unchanged.
     let verifyObj = try copyAttributeValue(focused, kAXValueAttribute as CFString)
@@ -258,7 +256,9 @@ final class AXTextInserter: TextInserter {
     }
 
     NSLog(
-      "[Insert][AX] verification succeeded (beforeLen=%d afterLen=%d)",
+      "[Insert][AX] inserted via AXValue replacement (verified) (location: %ld, insertedLen: %d, beforeLen: %d, afterLen: %d)",
+      loc,
+      insertedLen,
       (currentValue as NSString).length,
       (verifyValue as NSString).length
     )
