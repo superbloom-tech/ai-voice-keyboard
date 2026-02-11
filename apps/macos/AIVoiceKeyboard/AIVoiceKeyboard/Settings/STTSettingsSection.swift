@@ -108,6 +108,61 @@ struct STTSettingsSection: View {
         Text("settings.stt.remote.privacy_hint")
           .font(.footnote)
           .foregroundStyle(.secondary)
+
+      case .elevenLabsREST:
+        Text("stt_provider.elevenlabs_rest")
+          .font(.headline)
+
+        HStack(spacing: 12) {
+          TextField("settings.stt.remote.base_url_placeholder", text: $model.elevenLabsBaseURLString)
+          Button("common.action.reset") { model.applyDefaultElevenLabsBaseURL() }
+        }
+
+        TextField("settings.stt.remote.model_placeholder", text: $model.elevenLabsModel)
+
+        HStack(spacing: 12) {
+          TextField("settings.stt.remote.api_key_id_placeholder", text: $model.elevenLabsApiKeyId)
+          Button("common.action.default") { model.elevenLabsApiKeyId = "elevenlabs" }
+        }
+
+        HStack {
+          Text("common.timeout_seconds")
+          Spacer()
+          TextField("", value: $model.elevenLabsTimeoutSeconds, formatter: Self.secondsFormatter)
+            .frame(width: 72)
+            .multilineTextAlignment(.trailing)
+        }
+
+        VStack(alignment: .leading, spacing: 8) {
+          Text("common.api_key_keychain_title")
+            .font(.headline)
+
+          let statusKey = model.hasElevenLabsAPIKey ? "common.status.saved" : "common.status.not_saved"
+          let statusLine = String(
+            format: NSLocalizedString("settings.stt.remote.api_key.status_format", comment: ""),
+            NSLocalizedString(statusKey, comment: ""),
+            model.elevenLabsApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+          )
+          Text(statusLine)
+            .font(.footnote)
+            .foregroundStyle(model.hasElevenLabsAPIKey ? .green : .secondary)
+
+          HStack(spacing: 12) {
+            SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
+            Button("common.action.save") { model.saveAPIKey() }
+            Button("common.action.delete") { model.deleteAPIKey() }
+          }
+
+          if let message = model.apiKeyMessage, !message.isEmpty {
+            Text(message)
+              .font(.footnote)
+              .foregroundStyle(model.apiKeyMessageIsError ? .red : .secondary)
+          }
+        }
+
+        Text("settings.stt.remote.privacy_hint")
+          .font(.footnote)
+          .foregroundStyle(.secondary)
       }
 
       if let message = model.configMessage, !message.isEmpty {

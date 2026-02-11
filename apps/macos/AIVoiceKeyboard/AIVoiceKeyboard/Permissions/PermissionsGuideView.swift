@@ -18,6 +18,8 @@ struct PermissionsGuideView: View {
       return NSLocalizedString("stt_provider.whisper_local", comment: "")
     case .openAICompatible:
       return NSLocalizedString("stt_provider.openai_compatible", comment: "")
+    case .elevenLabsREST:
+      return NSLocalizedString("stt_provider.elevenlabs_rest", comment: "")
     }
   }
 

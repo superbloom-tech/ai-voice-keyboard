@@ -6,6 +6,7 @@ enum STTProviderKind: String, CaseIterable, Identifiable {
   case appleSpeech = "apple_speech"
   case whisperLocal = "whisper_local"
   case openAICompatible = "openai_compatible"
+  case elevenLabsREST = "elevenlabs_rest"
 
   var id: String { rawValue }
 
@@ -17,6 +18,8 @@ enum STTProviderKind: String, CaseIterable, Identifiable {
       return NSLocalizedString("stt_provider.whisper_local", comment: "")
     case .openAICompatible:
       return NSLocalizedString("stt_provider.openai_compatible", comment: "")
+    case .elevenLabsREST:
+      return NSLocalizedString("stt_provider.elevenlabs_rest", comment: "")
     }
   }
 }
@@ -40,6 +43,12 @@ final class STTSettingsModel: ObservableObject {
   @Published var remoteModel: String = "whisper-1"
   @Published var remoteApiKeyId: String = "openai"
   @Published var remoteTimeoutSeconds: Double = 30
+
+  // ElevenLabs (REST)
+  @Published var elevenLabsBaseURLString: String = "https://api.elevenlabs.io"
+  @Published var elevenLabsModel: String = "scribe_v1"
+  @Published var elevenLabsApiKeyId: String = "elevenlabs"
+  @Published var elevenLabsTimeoutSeconds: Double = 60
 
   // UI-only Keychain editing state.
   @Published var apiKeyDraft: String = ""
@@ -79,6 +88,28 @@ final class STTSettingsModel: ObservableObject {
         self.apiKeyMessageIsError = false
       }
       .store(in: &cancellables)
+
+    $elevenLabsApiKeyId
+      .removeDuplicates()
+      .dropFirst()
+      .sink { [weak self] _ in
+        guard let self else { return }
+        self.apiKeyDraft = ""
+        self.apiKeyMessage = nil
+        self.apiKeyMessageIsError = false
+      }
+      .store(in: &cancellables)
+
+    $selectedProvider
+      .removeDuplicates()
+      .dropFirst()
+      .sink { [weak self] _ in
+        guard let self else { return }
+        self.apiKeyDraft = ""
+        self.apiKeyMessage = nil
+        self.apiKeyMessageIsError = false
+      }
+      .store(in: &cancellables)
   }
 
   var hasRemoteAPIKey: Bool {
@@ -87,8 +118,26 @@ final class STTSettingsModel: ObservableObject {
     return STTKeychain.exists(apiKeyId: id)
   }
 
+  var hasElevenLabsAPIKey: Bool {
+    let id = elevenLabsApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !id.isEmpty else { return false }
+    return STTKeychain.exists(apiKeyId: id)
+  }
+
+  private var currentApiKeyIdForEditing: String {
+    switch selectedProvider {
+    case .elevenLabsREST:
+      return elevenLabsApiKeyId
+    case .openAICompatible:
+      return remoteApiKeyId
+    case .appleSpeech, .whisperLocal:
+      // Not used by the UI for these providers; default to remote to keep behavior predictable.
+      return remoteApiKeyId
+    }
+  }
+
   func saveAPIKey() {
-    let id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+    let id = currentApiKeyIdForEditing.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else {
       apiKeyMessageIsError = true
       apiKeyMessage = NSLocalizedString("settings.stt.remote.api_key.error_id_empty", comment: "")
@@ -117,7 +166,7 @@ final class STTSettingsModel: ObservableObject {
   }
 
   func deleteAPIKey() {
-    let id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+    let id = currentApiKeyIdForEditing.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else { return }
 
     do {
@@ -140,6 +189,14 @@ final class STTSettingsModel: ObservableObject {
 
   func applyDefaultRemoteModel() {
     remoteModel = "whisper-1"
+  }
+
+  func applyDefaultElevenLabsBaseURL() {
+    elevenLabsBaseURLString = "https://api.elevenlabs.io"
+  }
+
+  func applyDefaultElevenLabsModel() {
+    elevenLabsModel = "scribe_v1"
   }
 
   func currentConfiguration() -> STTProviderConfiguration? {
@@ -174,6 +231,22 @@ final class STTSettingsModel: ObservableObject {
         apiKeyId: keyId.isEmpty ? "openai" : keyId,
         model: model.isEmpty ? "whisper-1" : model,
         requestTimeoutSeconds: remoteTimeoutSeconds
+      ))
+
+    case .elevenLabsREST:
+      let base = elevenLabsBaseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard let baseURL = URL(string: base), baseURL.scheme != nil else {
+        return nil
+      }
+
+      let model = elevenLabsModel.trimmingCharacters(in: .whitespacesAndNewlines)
+      let keyId = elevenLabsApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+      return .elevenLabsREST(ElevenLabsRESTSTTConfiguration(
+        baseURL: baseURL,
+        apiKeyId: keyId.isEmpty ? "elevenlabs" : keyId,
+        model: model.isEmpty ? "scribe_v1" : model,
+        requestTimeoutSeconds: elevenLabsTimeoutSeconds
       ))
     }
   }
@@ -226,6 +299,13 @@ final class STTSettingsModel: ObservableObject {
       remoteApiKeyId = cfg.apiKeyId
       remoteModel = cfg.model
       remoteTimeoutSeconds = cfg.requestTimeoutSeconds
+
+    case .elevenLabsREST(let cfg):
+      selectedProvider = .elevenLabsREST
+      elevenLabsBaseURLString = cfg.baseURL.absoluteString
+      elevenLabsApiKeyId = cfg.apiKeyId
+      elevenLabsModel = cfg.model
+      elevenLabsTimeoutSeconds = cfg.requestTimeoutSeconds
     }
   }
 }

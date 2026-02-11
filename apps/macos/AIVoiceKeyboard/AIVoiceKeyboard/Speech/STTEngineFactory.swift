@@ -32,7 +32,13 @@ enum STTEngineFactory {
         locale: .current,
         stopTimeoutSeconds: max(5.0, cfg.requestTimeoutSeconds + 5.0)
       )
+
+    case .elevenLabsREST(let cfg):
+      return EngineContext(
+        engine: ElevenLabsRESTSTTEngine(configuration: cfg),
+        locale: .current,
+        stopTimeoutSeconds: max(5.0, cfg.requestTimeoutSeconds + 5.0)
+      )
     }
   }
 }
-
