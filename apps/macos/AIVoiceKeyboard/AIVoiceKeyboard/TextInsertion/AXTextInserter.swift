@@ -112,7 +112,7 @@ final class AXTextInserter: TextInserter {
 
           // Only verify via character count when we expect a length change (otherwise it can be a legit replacement).
           if expectedCharCount != beforeCharCount {
-            let delaysUs: [useconds_t] = [0, 50_000, 100_000] // total <= 150ms
+            let delaysUs: [useconds_t] = [0, 50_000, 100_000, 150_000] // total <= 300ms
             var afterCharCount: Int? = nil
             for delay in delaysUs {
               if delay > 0 { usleep(delay) }
@@ -130,7 +130,7 @@ final class AXTextInserter: TextInserter {
 
               if afterCharCount == beforeCharCount {
                 if let beforeValueForVerification {
-                  let delaysUs: [useconds_t] = [0, 50_000, 100_000] // total <= 150ms
+                  let delaysUs: [useconds_t] = [0, 50_000, 100_000, 150_000] // total <= 300ms
                   var afterValue: String? = nil
                   for delay in delaysUs {
                     if delay > 0 { usleep(delay) }
@@ -146,9 +146,11 @@ final class AXTextInserter: TextInserter {
                     }
                   }
 
-                  NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; falling back to AXValue replacement")
+                  NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; skipping AXValue to avoid double-insert")
+                  throw AXTextInsertError.verificationFailed("AXSelectedText returned success but no observable change (pid=\(pid) app=\(targetBundleId))")
                 } else {
-                  NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; falling back to AXValue replacement")
+                  NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; skipping AXValue to avoid double-insert")
+                  throw AXTextInsertError.verificationFailed("AXSelectedText returned success but no observable change (pid=\(pid) app=\(targetBundleId))")
                 }
               } else {
                 NSLog("[Insert][AX] inserted via AXSelectedText (verified by character count)")
@@ -238,16 +240,21 @@ final class AXTextInserter: TextInserter {
       throw AXTextInsertError.attributeWriteFailed("AXValue", setErr)
     }
 
-    // Verify the write actually took effect. Some apps report `success` but do not update the UI/value.
-    // We only fall back when we can confirm the value remained unchanged.
-    let verifyObj = try copyAttributeValue(focused, kAXValueAttribute as CFString)
-    let verifyValue: String
-    if let s = verifyObj as? String {
-      verifyValue = s
-    } else if let s = (verifyObj as? NSAttributedString)?.string {
-      verifyValue = s
-    } else {
-      throw AXTextInsertError.invalidAttributeType("AXValue")
+    // Verify the write actually took effect. Some apps (especially Electron-based) process AX writes
+    // asynchronously, so we retry with progressive delays before concluding the write was ignored.
+    let verifyDelays: [useconds_t] = [0, 100_000, 200_000] // total <= 300ms
+    var verifyValue: String = currentValue
+    for delay in verifyDelays {
+      if delay > 0 { usleep(delay) }
+      let verifyObj = try copyAttributeValue(focused, kAXValueAttribute as CFString)
+      if let s = verifyObj as? String {
+        verifyValue = s
+      } else if let s = (verifyObj as? NSAttributedString)?.string {
+        verifyValue = s
+      } else {
+        throw AXTextInsertError.invalidAttributeType("AXValue")
+      }
+      if verifyValue != currentValue { break }
     }
 
     if verifyValue == currentValue {
