@@ -6,6 +6,7 @@ enum STTProviderKind: String, CaseIterable, Identifiable {
   case appleSpeech = "apple_speech"
   case whisperLocal = "whisper_local"
   case openAICompatible = "openai_compatible"
+  case sonioxREST = "soniox_rest"
 
   var id: String { rawValue }
 
@@ -17,6 +18,8 @@ enum STTProviderKind: String, CaseIterable, Identifiable {
       return NSLocalizedString("stt_provider.whisper_local", comment: "")
     case .openAICompatible:
       return NSLocalizedString("stt_provider.openai_compatible", comment: "")
+    case .sonioxREST:
+      return NSLocalizedString("stt_provider.soniox_rest", comment: "")
     }
   }
 }
@@ -40,6 +43,12 @@ final class STTSettingsModel: ObservableObject {
   @Published var remoteModel: String = "whisper-1"
   @Published var remoteApiKeyId: String = "openai"
   @Published var remoteTimeoutSeconds: Double = 30
+
+  // Soniox (REST)
+  @Published var sonioxBaseURLString: String = "https://api.soniox.com"
+  @Published var sonioxModel: String = "stt-async-preview"
+  @Published var sonioxApiKeyId: String = "soniox"
+  @Published var sonioxTimeoutSeconds: Double = 60
 
   // UI-only Keychain editing state.
   @Published var apiKeyDraft: String = ""
@@ -79,6 +88,28 @@ final class STTSettingsModel: ObservableObject {
         self.apiKeyMessageIsError = false
       }
       .store(in: &cancellables)
+
+    $sonioxApiKeyId
+      .removeDuplicates()
+      .dropFirst()
+      .sink { [weak self] _ in
+        guard let self else { return }
+        self.apiKeyDraft = ""
+        self.apiKeyMessage = nil
+        self.apiKeyMessageIsError = false
+      }
+      .store(in: &cancellables)
+
+    $selectedProvider
+      .removeDuplicates()
+      .dropFirst()
+      .sink { [weak self] _ in
+        guard let self else { return }
+        self.apiKeyDraft = ""
+        self.apiKeyMessage = nil
+        self.apiKeyMessageIsError = false
+      }
+      .store(in: &cancellables)
   }
 
   var hasRemoteAPIKey: Bool {
@@ -87,8 +118,16 @@ final class STTSettingsModel: ObservableObject {
     return STTKeychain.exists(apiKeyId: id)
   }
 
+  var hasSonioxAPIKey: Bool {
+    let id = sonioxApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !id.isEmpty else { return false }
+    return STTKeychain.exists(apiKeyId: id)
+  }
+
   func saveAPIKey() {
-    let id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+    let id = selectedProvider == .sonioxREST
+      ? sonioxApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+      : remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else {
       apiKeyMessageIsError = true
       apiKeyMessage = NSLocalizedString("settings.stt.remote.api_key.error_id_empty", comment: "")
@@ -117,7 +156,9 @@ final class STTSettingsModel: ObservableObject {
   }
 
   func deleteAPIKey() {
-    let id = remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+    let id = selectedProvider == .sonioxREST
+      ? sonioxApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+      : remoteApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !id.isEmpty else { return }
 
     do {
@@ -140,6 +181,14 @@ final class STTSettingsModel: ObservableObject {
 
   func applyDefaultRemoteModel() {
     remoteModel = "whisper-1"
+  }
+
+  func applyDefaultSonioxBaseURL() {
+    sonioxBaseURLString = "https://api.soniox.com"
+  }
+
+  func applyDefaultSonioxModel() {
+    sonioxModel = "stt-async-preview"
   }
 
   func currentConfiguration() -> STTProviderConfiguration? {
@@ -174,6 +223,22 @@ final class STTSettingsModel: ObservableObject {
         apiKeyId: keyId.isEmpty ? "openai" : keyId,
         model: model.isEmpty ? "whisper-1" : model,
         requestTimeoutSeconds: remoteTimeoutSeconds
+      ))
+
+    case .sonioxREST:
+      let base = sonioxBaseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard let baseURL = URL(string: base), baseURL.scheme != nil else {
+        return nil
+      }
+
+      let model = sonioxModel.trimmingCharacters(in: .whitespacesAndNewlines)
+      let keyId = sonioxApiKeyId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+      return .sonioxREST(SonioxRESTSTTConfiguration(
+        baseURL: baseURL,
+        apiKeyId: keyId.isEmpty ? "soniox" : keyId,
+        model: model.isEmpty ? "stt-async-preview" : model,
+        requestTimeoutSeconds: sonioxTimeoutSeconds
       ))
     }
   }
@@ -226,6 +291,13 @@ final class STTSettingsModel: ObservableObject {
       remoteApiKeyId = cfg.apiKeyId
       remoteModel = cfg.model
       remoteTimeoutSeconds = cfg.requestTimeoutSeconds
+
+    case .sonioxREST(let cfg):
+      selectedProvider = .sonioxREST
+      sonioxBaseURLString = cfg.baseURL.absoluteString
+      sonioxApiKeyId = cfg.apiKeyId
+      sonioxModel = cfg.model
+      sonioxTimeoutSeconds = cfg.requestTimeoutSeconds
     }
   }
 }
