@@ -80,6 +80,14 @@ final class AXTextInserter: TextInserter {
     if selectedTextSettable {
       let beforeCharCount = copyIntAttribute(focused, kAXNumberOfCharactersAttribute as CFString)
       let beforeSelectedRange = copySelectedTextRange(focused)
+      let beforeValueForVerification: String? = {
+        // Avoid reading large values unless we have to. We only use this to detect the "success but no-op"
+        // cases when AXSelectedText claims to succeed.
+        if let beforeCharCount {
+          return beforeCharCount <= 4096 ? copyValueString(focused) : nil
+        }
+        return copyValueString(focused)
+      }()
 
       if let beforeCharCount {
         NSLog("[Insert][AX] before AXSelectedText insert — charCount=%d", beforeCharCount)
@@ -90,6 +98,9 @@ final class AXTextInserter: TextInserter {
           beforeSelectedRange.location,
           beforeSelectedRange.length
         )
+      }
+      if let beforeValueForVerification {
+        NSLog("[Insert][AX] before AXSelectedText insert — valueLength=%d", (beforeValueForVerification as NSString).length)
       }
 
       let err = AXUIElementSetAttributeValue(focused, kAXSelectedTextAttribute as CFString, trimmed as CFString)
@@ -118,7 +129,27 @@ final class AXTextInserter: TextInserter {
               )
 
               if afterCharCount == beforeCharCount {
-                NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; falling back to AXValue replacement")
+                if let beforeValueForVerification {
+                  let delaysUs: [useconds_t] = [0, 50_000, 100_000] // total <= 150ms
+                  var afterValue: String? = nil
+                  for delay in delaysUs {
+                    if delay > 0 { usleep(delay) }
+                    afterValue = copyValueString(focused)
+                    if let afterValue, afterValue != beforeValueForVerification { break }
+                  }
+
+                  if let afterValue {
+                    NSLog("[Insert][AX] after AXSelectedText insert — valueLength=%d", (afterValue as NSString).length)
+                    if afterValue != beforeValueForVerification {
+                      NSLog("[Insert][AX] inserted via AXSelectedText (verified by value change)")
+                      return .ax
+                    }
+                  }
+
+                  NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; falling back to AXValue replacement")
+                } else {
+                  NSLog("[Insert][AX] AXSelectedText set returned success but no observable change; falling back to AXValue replacement")
+                }
               } else {
                 NSLog("[Insert][AX] inserted via AXSelectedText (verified by character count)")
                 return .ax
@@ -291,5 +322,15 @@ final class AXTextInserter: TextInserter {
     var range = CFRange()
     guard AXValueGetValue(value as! AXValue, .cfRange, &range) else { return nil }
     return range
+  }
+
+  private func copyValueString(_ element: AXUIElement) -> String? {
+    var value: AnyObject?
+    let err = AXUIElementCopyAttributeValue(element, kAXValueAttribute as CFString, &value)
+    guard err == .success, let value else { return nil }
+
+    if let s = value as? String { return s }
+    if let s = (value as? NSAttributedString)?.string { return s }
+    return nil
   }
 }
