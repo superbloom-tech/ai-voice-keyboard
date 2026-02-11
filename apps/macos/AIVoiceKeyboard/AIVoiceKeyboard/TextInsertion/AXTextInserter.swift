@@ -1,4 +1,5 @@
 import ApplicationServices
+import AppKit
 import Foundation
 
 /// Attempts to insert/replace text using Accessibility (AX) without mutating clipboard.
@@ -12,6 +13,7 @@ final class AXTextInserter: TextInserter {
     case invalidAttributeType(String)
     case invalidSelectedRange
     case selectedRangeOutOfBounds(original: CFRange, valueLength: Int)
+    case verificationFailed(String)
 
     var errorDescription: String? {
       switch self {
@@ -31,6 +33,8 @@ final class AXTextInserter: TextInserter {
         return "Invalid AX selected text range"
       case .selectedRangeOutOfBounds(let r, let len):
         return "AX selected range out of bounds (location: \(r.location), length: \(r.length), valueLength: \(len))"
+      case .verificationFailed(let reason):
+        return "AX insert verification failed: \(reason)"
       }
     }
   }
@@ -49,13 +53,22 @@ final class AXTextInserter: TextInserter {
     let systemWide = AXUIElementCreateSystemWide()
     let focused = try copyAXUIElementAttribute(systemWide, kAXFocusedUIElementAttribute as CFString)
 
+    var pid: pid_t = 0
+    AXUIElementGetPid(focused, &pid)
+    let targetApp = NSRunningApplication(processIdentifier: pid)
+    let targetAppName = targetApp?.localizedName ?? "unknown"
+    let targetBundleId = targetApp?.bundleIdentifier ?? "unknown"
+
     let role = copyStringAttribute(focused, kAXRoleAttribute as CFString) ?? "unknown"
     let subrole = copyStringAttribute(focused, kAXSubroleAttribute as CFString) ?? "unknown"
     let selectedTextSettable = isAttributeSettable(focused, kAXSelectedTextAttribute as CFString)
     let valueSettable = isAttributeSettable(focused, kAXValueAttribute as CFString)
 
     NSLog(
-      "[Insert][AX] focused role=%@ subrole=%@ settableSelectedText=%@ settableValue=%@",
+      "[Insert][AX] focused pid=%d app=%@(%@) role=%@ subrole=%@ settableSelectedText=%@ settableValue=%@",
+      pid,
+      targetAppName,
+      targetBundleId,
       role,
       subrole,
       selectedTextSettable ? "YES" : "NO",
@@ -97,6 +110,13 @@ final class AXTextInserter: TextInserter {
       throw AXTextInsertError.invalidAttributeType("AXValue")
     }
 
+    NSLog(
+      "[Insert][AX] value replacement — selectedRange=(loc=%ld len=%ld) valueLength=%d",
+      selectedRange.location,
+      selectedRange.length,
+      (currentValue as NSString).length
+    )
+
     // Clamp to a safe UTF-16 range to avoid crashes from out-of-bounds ranges.
     let ns = currentValue as NSString
     let fullLen = ns.length
@@ -117,12 +137,42 @@ final class AXTextInserter: TextInserter {
     }
 
     let nextValue = ns.replacingCharacters(in: safeRange, with: trimmed)
-    let setErr = AXUIElementSetAttributeValue(focused, kAXValueAttribute as CFString, nextValue as CFString)
+    let setErr: AXError
+    if currentValueObj is NSAttributedString {
+      // Some apps expose AXValue as NSAttributedString; write back the same type for best compatibility.
+      let nextAttr = NSAttributedString(string: nextValue)
+      setErr = AXUIElementSetAttributeValue(focused, kAXValueAttribute as CFString, nextAttr as CFAttributedString)
+    } else {
+      setErr = AXUIElementSetAttributeValue(focused, kAXValueAttribute as CFString, nextValue as CFString)
+    }
     guard setErr == .success else {
       throw AXTextInsertError.attributeWriteFailed("AXValue", setErr)
     }
 
     NSLog("[Insert][AX] inserted via AXValue replacement (location: %ld, length: %d)", loc, (trimmed as NSString).length)
+
+    // Verify the write actually took effect. Some apps report `success` but do not update the UI/value.
+    // We only fall back when we can confirm the value remained unchanged.
+    let verifyObj = try copyAttributeValue(focused, kAXValueAttribute as CFString)
+    let verifyValue: String
+    if let s = verifyObj as? String {
+      verifyValue = s
+    } else if let s = (verifyObj as? NSAttributedString)?.string {
+      verifyValue = s
+    } else {
+      throw AXTextInsertError.invalidAttributeType("AXValue")
+    }
+
+    if verifyValue == currentValue {
+      NSLog("[Insert][AX] verification failed: AXValue unchanged after set; falling back to paste")
+      throw AXTextInsertError.verificationFailed("AXValue unchanged after set (pid=\(pid) app=\(targetBundleId))")
+    }
+
+    NSLog(
+      "[Insert][AX] verification succeeded (beforeLen=%d afterLen=%d)",
+      (currentValue as NSString).length,
+      (verifyValue as NSString).length
+    )
 
     // Best-effort: move the caret to the end of inserted text.
     let insertedLen = (trimmed as NSString).length
