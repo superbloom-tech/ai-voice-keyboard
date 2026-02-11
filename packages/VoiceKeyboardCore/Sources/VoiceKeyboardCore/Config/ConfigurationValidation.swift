@@ -79,6 +79,17 @@ public extension OpenAICompatibleSTTConfiguration {
   }
 }
 
+public extension ElevenLabsRESTSTTConfiguration {
+  func validate() -> [ConfigurationValidationIssue] {
+    var issues: [ConfigurationValidationIssue] = []
+    issues += ConfigurationValidation.validateBaseURL(baseURL, field: "baseURL")
+    issues += ConfigurationValidation.validateNonEmpty(apiKeyId, field: "apiKeyId")
+    issues += ConfigurationValidation.validateNonEmpty(model, field: "model")
+    issues += ConfigurationValidation.validateTimeout(requestTimeoutSeconds, field: "requestTimeoutSeconds")
+    return issues
+  }
+}
+
 public extension WhisperLocalConfiguration {
   func validate() -> [ConfigurationValidationIssue] {
     var issues: [ConfigurationValidationIssue] = []
@@ -111,6 +122,8 @@ public extension STTProviderConfiguration {
     case .whisperLocal(let cfg):
       return cfg.validate()
     case .openAICompatible(let cfg):
+      return cfg.validate()
+    case .elevenLabsREST(let cfg):
       return cfg.validate()
     }
   }

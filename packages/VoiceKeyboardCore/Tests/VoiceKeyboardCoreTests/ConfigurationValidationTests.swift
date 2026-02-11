@@ -75,4 +75,17 @@ final class ConfigurationValidationTests: XCTestCase {
     let issues = cfg.validate()
     XCTAssertTrue(issues.contains { $0.field == "executablePath" && $0.severity == .error })
   }
+
+  func testValidateElevenLabsRESTConfigurationRejectsEmptyApiKeyIdAndModel() throws {
+    let cfg = ElevenLabsRESTSTTConfiguration(
+      baseURL: URL(string: "https://api.elevenlabs.io")!,
+      apiKeyId: "  ",
+      model: "",
+      requestTimeoutSeconds: 10
+    )
+
+    let issues = cfg.validate()
+    XCTAssertTrue(issues.contains { $0.field == "apiKeyId" && $0.severity == .error })
+    XCTAssertTrue(issues.contains { $0.field == "model" && $0.severity == .error })
+  }
 }

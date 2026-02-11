@@ -69,6 +69,20 @@ public struct OpenAICompatibleSTTConfiguration: Codable, Equatable, Sendable {
   }
 }
 
+public struct ElevenLabsRESTSTTConfiguration: Codable, Equatable, Sendable {
+  public var baseURL: URL
+  public var apiKeyId: String
+  public var model: String
+  public var requestTimeoutSeconds: Double
+
+  public init(baseURL: URL, apiKeyId: String, model: String, requestTimeoutSeconds: Double) {
+    self.baseURL = baseURL
+    self.apiKeyId = apiKeyId
+    self.model = model
+    self.requestTimeoutSeconds = requestTimeoutSeconds
+  }
+}
+
 public struct WhisperLocalConfiguration: Codable, Equatable, Sendable {
   /// Optional absolute path to the `whisper` executable.
   ///
@@ -103,6 +117,7 @@ public enum STTProviderConfiguration: Codable, Equatable, Sendable {
   case appleSpeech(AppleSpeechConfiguration)
   case whisperLocal(WhisperLocalConfiguration)
   case openAICompatible(OpenAICompatibleSTTConfiguration)
+  case elevenLabsREST(ElevenLabsRESTSTTConfiguration)
 
   private enum CodingKeys: String, CodingKey {
     case type
@@ -121,6 +136,9 @@ public enum STTProviderConfiguration: Codable, Equatable, Sendable {
     case .openAICompatible(let cfg):
       try container.encode("openai_compatible", forKey: .type)
       try container.encode(cfg, forKey: .config)
+    case .elevenLabsREST(let cfg):
+      try container.encode("elevenlabs_rest", forKey: .type)
+      try container.encode(cfg, forKey: .config)
     }
   }
 
@@ -134,6 +152,8 @@ public enum STTProviderConfiguration: Codable, Equatable, Sendable {
       self = .whisperLocal(try container.decode(WhisperLocalConfiguration.self, forKey: .config))
     case "openai_compatible":
       self = .openAICompatible(try container.decode(OpenAICompatibleSTTConfiguration.self, forKey: .config))
+    case "elevenlabs_rest":
+      self = .elevenLabsREST(try container.decode(ElevenLabsRESTSTTConfiguration.self, forKey: .config))
     default:
       throw DecodingError.dataCorruptedError(
         forKey: .type,

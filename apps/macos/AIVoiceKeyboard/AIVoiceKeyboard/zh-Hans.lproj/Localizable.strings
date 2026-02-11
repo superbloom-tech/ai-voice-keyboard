@@ -34,6 +34,7 @@
 "stt_provider.apple_speech" = "Apple Speech";
 "stt_provider.whisper_local" = "Whisper（本地）";
 "stt_provider.openai_compatible" = "远端（OpenAI 兼容）";
+"stt_provider.elevenlabs_rest" = "ElevenLabs（REST）";
 
 /* Permission kinds */
 "permission.kind.microphone" = "麦克风";

@@ -47,4 +47,19 @@ final class ProviderConfigurationCodableTests: XCTestCase {
     let decoded = try JSONDecoder().decode(STTProviderConfiguration.self, from: data)
     XCTAssertEqual(decoded, cfg)
   }
+
+  func testElevenLabsRESTSTTProviderConfigurationCodableRoundTrip() throws {
+    let cfg = STTProviderConfiguration.elevenLabsREST(
+      ElevenLabsRESTSTTConfiguration(
+        baseURL: URL(string: "https://api.elevenlabs.io")!,
+        apiKeyId: "key_elevenlabs",
+        model: "scribe_v1",
+        requestTimeoutSeconds: 60
+      )
+    )
+
+    let data = try JSONEncoder().encode(cfg)
+    let decoded = try JSONDecoder().decode(STTProviderConfiguration.self, from: data)
+    XCTAssertEqual(decoded, cfg)
+  }
 }
