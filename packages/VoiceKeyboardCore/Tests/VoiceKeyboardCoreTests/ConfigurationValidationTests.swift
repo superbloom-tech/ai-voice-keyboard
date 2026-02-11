@@ -28,6 +28,19 @@ final class ConfigurationValidationTests: XCTestCase {
     XCTAssertTrue(issues.contains { $0.field == "model" && $0.severity == .error })
   }
 
+  func testValidateSonioxRESTConfigurationRejectsEmptyApiKeyIdAndModel() throws {
+    let cfg = SonioxRESTSTTConfiguration(
+      baseURL: URL(string: "https://api.soniox.com")!,
+      apiKeyId: "   ",
+      model: "",
+      requestTimeoutSeconds: 10
+    )
+
+    let issues = cfg.validate()
+    XCTAssertTrue(issues.contains { $0.field == "apiKeyId" && $0.severity == .error })
+    XCTAssertTrue(issues.contains { $0.field == "model" && $0.severity == .error })
+  }
+
   func testValidateBaseURLHttpIsWarning() throws {
     let cfg = OpenAICompatibleLLMConfiguration(
       baseURL: URL(string: "http://example.com")!,

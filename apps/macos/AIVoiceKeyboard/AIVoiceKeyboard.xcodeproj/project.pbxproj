@@ -17,6 +17,7 @@
 		2D63CD2F8E899CB54F047B80 /* AIVoiceKeyboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */; };
 		2F5232C7F08262CEB6F71B04 /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F13F940873227C1756DCAC /* RecordingHUDController.swift */; };
 		35FFDE52245FB23955EB69A1 /* OpenAICompatibleSTTEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D8CFBF6F3EFAC99E33C20F5 /* OpenAICompatibleSTTEngine.swift */; };
+		F4BAC68058494385A8A006D1 /* SonioxRESTSTTEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EFDCCB8671B4C33A353CE36 /* SonioxRESTSTTEngine.swift */; };
 		384F0371693F1A01BE675EDB /* STTSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8A074180E7642DDF3FD07F /* STTSettingsSection.swift */; };
 		425D38A610AEA92E9B9247A8 /* KeychainManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26534F3B81D890FF9C27F9D8 /* KeychainManagerTests.swift */; };
 		457313494E728BA9C7B65E35 /* STTSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0178E3308878A0B2C2CE2D95 /* STTSettingsModel.swift */; };
@@ -72,6 +73,7 @@
 		202556A7EB1F5BB55614F7B8 /* MockLLMAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLLMAPIClient.swift; sourceTree = "<group>"; };
 		26534F3B81D890FF9C27F9D8 /* KeychainManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManagerTests.swift; sourceTree = "<group>"; };
 		2D8CFBF6F3EFAC99E33C20F5 /* OpenAICompatibleSTTEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleSTTEngine.swift; sourceTree = "<group>"; };
+		2EFDCCB8671B4C33A353CE36 /* SonioxRESTSTTEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SonioxRESTSTTEngine.swift; sourceTree = "<group>"; };
 		2DD65E212905B6BB33840145 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		32B3D4893DA97C8D2376A548 /* AIVoiceKeyboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIVoiceKeyboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		332B2285BAD174EB5D4D1D48 /* TextCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleaner.swift; sourceTree = "<group>"; };
@@ -149,6 +151,7 @@
 			children = (
 				6141A2C50B788192D5E99F74 /* AppleSpeechSTTEngine.swift */,
 				2D8CFBF6F3EFAC99E33C20F5 /* OpenAICompatibleSTTEngine.swift */,
+				2EFDCCB8671B4C33A353CE36 /* SonioxRESTSTTEngine.swift */,
 				9525CFA467368EA8BE495BA7 /* PushToTalkSTTSession.swift */,
 				7031966727210D33FE0B1309 /* STTEngineFactory.swift */,
 				AAC6761C79980B380DE1010B /* STTProviderStore.swift */,
@@ -386,6 +389,7 @@
 				9F7D49111009120C19DA770C /* LLMRefiner.swift in Sources */,
 				BFAC76DD1754B6849D53860D /* OpenAIClient.swift in Sources */,
 				35FFDE52245FB23955EB69A1 /* OpenAICompatibleSTTEngine.swift in Sources */,
+				F4BAC68058494385A8A006D1 /* SonioxRESTSTTEngine.swift in Sources */,
 				1802C5A303884DB6B7D27C02 /* AXTextInserter.swift in Sources */,
 				ED15A40A3D5DB285D4072A44 /* PasteTextInserter.swift in Sources */,
 				81FADE15F7FE4CE49366FA5F /* SmartTextInserter.swift in Sources */,

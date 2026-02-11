@@ -33,6 +33,21 @@ final class ProviderConfigurationCodableTests: XCTestCase {
     XCTAssertEqual(decoded, cfg)
   }
 
+  func testSonioxRESTSTTProviderConfigurationCodableRoundTrip() throws {
+    let cfg = STTProviderConfiguration.sonioxREST(
+      SonioxRESTSTTConfiguration(
+        baseURL: URL(string: "https://api.soniox.com")!,
+        apiKeyId: "key_soniox",
+        model: "stt-async-preview",
+        requestTimeoutSeconds: 45
+      )
+    )
+
+    let data = try JSONEncoder().encode(cfg)
+    let decoded = try JSONDecoder().decode(STTProviderConfiguration.self, from: data)
+    XCTAssertEqual(decoded, cfg)
+  }
+
   func testWhisperLocalSTTProviderConfigurationCodableRoundTrip() throws {
     let cfg = STTProviderConfiguration.whisperLocal(
       WhisperLocalConfiguration(

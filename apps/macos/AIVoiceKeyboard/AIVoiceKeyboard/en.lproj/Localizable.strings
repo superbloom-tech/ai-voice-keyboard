@@ -34,6 +34,7 @@
 "stt_provider.apple_speech" = "Apple Speech";
 "stt_provider.whisper_local" = "Whisper (Local)";
 "stt_provider.openai_compatible" = "Remote (OpenAI-compatible)";
+"stt_provider.soniox_rest" = "Soniox (REST)";
 
 /* Permission kinds */
 "permission.kind.microphone" = "Microphone";
