@@ -169,7 +169,9 @@ final class AXTextInserter: TextInserter {
           return .ax
         }
       }
-      NSLog("[Insert][AX] set selectedText failed (AXError: %d); falling back.", err.rawValue)
+      if err != .success {
+        NSLog("[Insert][AX] set selectedText failed (AXError: %d); falling back.", err.rawValue)
+      }
     }
 
     // Fallback: replace the selected range in the element's value.

@@ -78,8 +78,10 @@ final class PasteTextInserter: TextInserter {
       throw PasteInsertError.failedToCreateKeyEvents
     }
 
+    // Some apps appear to trigger the shortcut on both keyDown and keyUp if the modifier flags are set.
+    // We keep Cmd on keyDown (to trigger Paste) and clear it on keyUp to avoid duplicate pastes.
     down.flags = [.maskCommand]
-    up.flags = [.maskCommand]
+    up.flags = []
 
     down.post(tap: .cghidEventTap)
     up.post(tap: .cghidEventTap)
