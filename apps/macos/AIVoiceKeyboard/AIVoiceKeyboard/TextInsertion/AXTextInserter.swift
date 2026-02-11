@@ -44,6 +44,8 @@ final class AXTextInserter: TextInserter {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { throw AXTextInsertError.emptyText }
 
+    NSLog("[Insert][AX] attempting insert (length: %d)", trimmed.count)
+
     let systemWide = AXUIElementCreateSystemWide()
     let focused = try copyAXUIElementAttribute(systemWide, kAXFocusedUIElementAttribute as CFString)
 
@@ -64,6 +66,7 @@ final class AXTextInserter: TextInserter {
     if selectedTextSettable {
       let err = AXUIElementSetAttributeValue(focused, kAXSelectedTextAttribute as CFString, trimmed as CFString)
       if err == .success {
+        NSLog("[Insert][AX] inserted via AXSelectedText (length: %d)", trimmed.count)
         return .ax
       }
       NSLog("[Insert][AX] set selectedText failed (AXError: %d); falling back.", err.rawValue)
@@ -118,6 +121,8 @@ final class AXTextInserter: TextInserter {
     guard setErr == .success else {
       throw AXTextInsertError.attributeWriteFailed("AXValue", setErr)
     }
+
+    NSLog("[Insert][AX] inserted via AXValue replacement (location: %ld, length: %d)", loc, (trimmed as NSString).length)
 
     // Best-effort: move the caret to the end of inserted text.
     let insertedLen = (trimmed as NSString).length
