@@ -1,4 +1,5 @@
 import XCTest
+@testable import AIVoiceKeyboard
 
 @MainActor
 final class SmartTextInserterTests: XCTestCase {
@@ -65,4 +66,3 @@ final class SmartTextInserterTests: XCTestCase {
     XCTAssertEqual(paste.callCount, 1)
   }
 }
-
