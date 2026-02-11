@@ -590,7 +590,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // (AX insertion does not touch clipboard.)
     let snap = PasteboardSnapshot.capture(from: .general)
     let method = try inserter.insert(text: finalText)
-    if method == .paste {
+    if method == .paste || method == .pasteClipboardOnly {
       lastClipboardSnapshot = snap
       rebuildHistoryMenu()
     }

@@ -11,6 +11,7 @@ final class AXTextInserter: TextInserter {
     case attributeNotSettable(String)
     case invalidAttributeType(String)
     case invalidSelectedRange
+    case selectedRangeOutOfBounds(original: CFRange, valueLength: Int)
 
     var errorDescription: String? {
       switch self {
@@ -28,6 +29,8 @@ final class AXTextInserter: TextInserter {
         return "Unexpected AX attribute type: \(attr)"
       case .invalidSelectedRange:
         return "Invalid AX selected text range"
+      case .selectedRangeOutOfBounds(let r, let len):
+        return "AX selected range out of bounds (location: \(r.location), length: \(r.length), valueLength: \(len))"
       }
     }
   }
@@ -36,6 +39,8 @@ final class AXTextInserter: TextInserter {
 
   @discardableResult
   func insert(text: String) throws -> TextInsertionMethod {
+    // Insert is designed for natural language dictation; we trim leading/trailing whitespace.
+    // If we add "code mode" later, we should revisit this.
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { throw AXTextInsertError.emptyText }
 
@@ -95,6 +100,18 @@ final class AXTextInserter: TextInserter {
     let loc = max(0, min(selectedRange.location, fullLen))
     let len = max(0, min(selectedRange.length, fullLen - loc))
     let safeRange = NSRange(location: loc, length: len)
+
+    // If AX returns an invalid/out-of-bounds range, prefer failing fast so `SmartTextInserter`
+    // can fall back to the paste strategy instead of inserting into an unexpected position.
+    if loc != selectedRange.location || len != selectedRange.length {
+      NSLog(
+        "[Insert][AX] Warning: selectedRange out of bounds (loc=%ld len=%ld fullLen=%ld); falling back to paste.",
+        selectedRange.location,
+        selectedRange.length,
+        fullLen
+      )
+      throw AXTextInsertError.selectedRangeOutOfBounds(original: selectedRange, valueLength: fullLen)
+    }
 
     let nextValue = ns.replacingCharacters(in: safeRange, with: trimmed)
     let setErr = AXUIElementSetAttributeValue(focused, kAXValueAttribute as CFString, nextValue as CFString)
