@@ -159,7 +159,7 @@ private struct PermissionGuideRow: View {
         .frame(width: 170, alignment: .leading)
 
       Text(status.localizedText(for: kind))
-        .foregroundStyle(status.isSatisfied ? .green : .secondary)
+        .foregroundStyle(status.isSatisfied ? .primary : .secondary)
         .frame(width: 140, alignment: .leading)
 
       Text(tag)

@@ -55,6 +55,12 @@
 "settings.app_title" = "AI 語音鍵盤";
 
 "settings.section.permissions" = "權限";
+"settings.nav.permissions" = "權限";
+"settings.nav.hotkeys" = "快捷鍵";
+"settings.nav.stt" = "STT";
+"settings.nav.post_processing" = "後處理";
+"settings.nav.history" = "歷史";
+"settings.nav.language" = "語言";
 "settings.permissions.tip_denied" = "提示：如果權限被拒絕，請點擊「開啟系統設定」授予權限，然後點擊「重新整理」。";
 "settings.permissions.tip_accessibility" = "提示：輔助功能是「信任設定」，無法一鍵授權。在系統設定裡開啟後，回到本應用並點擊「重新整理」更新狀態。部分應用可能需要重新聚焦或重啟後才生效。";
 
@@ -66,8 +72,25 @@
 "settings.history.alert_action_turn_off_keep" = "關閉（保留檔案）";
 "settings.history.alert_action_turn_off_delete" = "關閉（刪除檔案）";
 
+"settings.section.hotkeys" = "快捷鍵";
+
+"settings.hotkeys.insert_label" = "Insert";
+"settings.hotkeys.edit_label" = "Edit";
+"settings.hotkeys.action.change" = "修改";
+"settings.hotkeys.action.cancel" = "取消";
+"settings.hotkeys.action.reset_defaults" = "還原預設";
+"settings.hotkeys.hint.press_keys" = "請按下新的快捷鍵…";
+"settings.hotkeys.hint.modifier_requirement" = "提示：快捷鍵需包含 Cmd/Option/Control（不允許僅 Shift）。";
+"settings.hotkeys.status.applied" = "已套用。";
+"settings.hotkeys.status.reset" = "已還原預設。";
+"settings.hotkeys.error.invalid.shift_only" = "快捷鍵無效：不允許僅 Shift。";
+"settings.hotkeys.error.invalid.no_modifier" = "快捷鍵無效：請至少包含一個修飾鍵。";
+"settings.hotkeys.error.conflict.insert_edit_same" = "快捷鍵衝突：Insert 與 Edit 不能相同。";
+
 "settings.section.stt" = "語音轉文字（STT）";
 "settings.section.post_processing" = "後處理 / LLM";
+
+"settings.footer.prealpha_note" = "Pre-alpha：功能與設定仍在迭代中。";
 
 /* Language */
 "settings.language.section_title" = "語言";
@@ -91,6 +114,10 @@
 "menu.history" = "歷史";
 "menu.history_clear" = "清空歷史";
 "menu.history_empty" = "暫無歷史";
+"menu.hotkeys.info_loading" = "快捷鍵：載入中…";
+"menu.hotkeys.info_format" = "快捷鍵：%@（Insert），%@（Edit）";
+"menu.hotkeys.info_disabled" = "快捷鍵：已停用（見下方錯誤）";
+"menu.hotkeys.error_format" = "快捷鍵錯誤：%@";
 "menu.toggle_insert" = "切換插入錄音";
 "menu.toggle_edit" = "切換編輯錄音";
 "menu.toggle_edit_coming_soon" = "切換編輯錄音（即將推出）";

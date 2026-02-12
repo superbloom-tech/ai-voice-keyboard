@@ -93,7 +93,7 @@ final class GlobalHotKeyCenter {
   private var actionByID: [UInt32: Action] = [:]
   private var registeredHotKeyRefs: [UInt32: EventHotKeyRef?] = [:]
 
-  private func registerHotKeys(_ bindings: [Binding]) throws {
+  func registerHotKeys(_ bindings: [Binding]) throws {
     // Ensure we don't leak multiple handlers/registrations across retries.
     unregisterAll()
 

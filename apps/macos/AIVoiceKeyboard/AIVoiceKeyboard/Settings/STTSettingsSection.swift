@@ -90,7 +90,7 @@ struct STTSettingsSection: View {
           )
           Text(statusLine)
             .font(.footnote)
-            .foregroundStyle(model.hasRemoteAPIKey ? .green : .secondary)
+            .foregroundStyle(model.hasRemoteAPIKey ? .primary : .secondary)
 
           HStack(spacing: 12) {
             SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
@@ -145,7 +145,7 @@ struct STTSettingsSection: View {
           )
           Text(statusLine)
             .font(.footnote)
-            .foregroundStyle(model.hasElevenLabsAPIKey ? .green : .secondary)
+            .foregroundStyle(model.hasElevenLabsAPIKey ? .primary : .secondary)
 
           HStack(spacing: 12) {
             SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)

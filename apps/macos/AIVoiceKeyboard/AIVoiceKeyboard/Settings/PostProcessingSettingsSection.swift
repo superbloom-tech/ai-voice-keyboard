@@ -159,7 +159,7 @@ struct PostProcessingSettingsSection: View {
         )
         Text(statusLine)
           .font(.footnote)
-          .foregroundStyle(saved ? .green : .secondary)
+          .foregroundStyle(saved ? .primary : .secondary)
 
         HStack(spacing: 12) {
           SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
