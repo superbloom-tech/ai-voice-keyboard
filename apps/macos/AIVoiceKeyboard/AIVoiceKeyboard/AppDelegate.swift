@@ -826,7 +826,9 @@ final class SettingsWindowController {
     window.styleMask = [.titled, .closable, .resizable]
     // Issue #39: keep a reasonable default size while allowing the user to resize down on smaller screens.
     window.setContentSize(NSSize(width: 680, height: 720))
-    window.minSize = NSSize(width: 560, height: 520)
+    // Use *content* min size. `minSize` includes the titlebar, which can cause the SwiftUI chrome
+    // (header/footer) to be clipped when the window is resized to the minimum.
+    window.contentMinSize = NSSize(width: 560, height: 520)
     window.center()
     window.isReleasedWhenClosed = false
 
