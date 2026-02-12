@@ -48,6 +48,12 @@
 		81FADE15F7FE4CE49366FA5F /* SmartTextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEDA3CCC122D44FBAA1DF52E /* SmartTextInserter.swift */; };
 		F935859A7FD9E183FEBCE2C7 /* PermissionsGuideWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33B587786CBB82200622D88 /* PermissionsGuideWindowController.swift */; };
 		F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */; };
+		B7B19DE0E4344122BBB67DA3 /* HotKeyConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5DB69C9FFB448C8C975B88 /* HotKeyConfiguration.swift */; };
+		B595E0472BA04D00A9617DAD /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C74B357AAC4EC9AAEA28BB /* HotKeyManager.swift */; };
+		3EA9676312664F658A648218 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC4D446493E4A919D08E5A9 /* AppLanguage.swift */; };
+		9F26C0F877224022B6FD8B75 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2A8EDEEBF1B4E988FDD47D0 /* SettingsView.swift */; };
+		6C39E925AA7B454384BD69EF /* HotkeysSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2E09C55A9745D9853449E1 /* HotkeysSettingsPane.swift */; };
+		DCF8076F7E7C4FCF881F69D8 /* MonochromeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A05C08CB2FC41479AC43E22 /* MonochromeComponents.swift */; };
 		F50FB68F95752C3A13B3B24B /* PostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71293D1E7A37E4654058C669 /* PostProcessor.swift */; };
 		FFA66575B55DD5CC4AA75D6E /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F11769D72E2FB09C9B78D8 /* TextInserter.swift */; };
 		E77747312F9B12A4982C90AC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1BD4E6B2D31AD240B12A26AC /* Localizable.strings */; };
@@ -97,6 +103,12 @@
 		990332E78C912D3698638D6F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		882897C3922745F995BDCF16 /* SmartTextInserterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextInserterTests.swift; sourceTree = "<group>"; };
 		9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyCenter.swift; sourceTree = "<group>"; };
+		FB5DB69C9FFB448C8C975B88 /* HotKeyConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyConfiguration.swift; sourceTree = "<group>"; };
+		A7C74B357AAC4EC9AAEA28BB /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
+		8BC4D446493E4A919D08E5A9 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		A2A8EDEEBF1B4E988FDD47D0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1B2E09C55A9745D9853449E1 /* HotkeysSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeysSettingsPane.swift; sourceTree = "<group>"; };
+		8A05C08CB2FC41479AC43E22 /* MonochromeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonochromeComponents.swift; sourceTree = "<group>"; };
 		AAC6761C79980B380DE1010B /* STTProviderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTProviderStore.swift; sourceTree = "<group>"; };
 		ABCC6DA30946456FF63B6E75 /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenter.swift; sourceTree = "<group>"; };
 		B73A758B9695DC91A92C3B90 /* PostProcessingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingConfig.swift; sourceTree = "<group>"; };
@@ -191,12 +203,25 @@
 		5CCD9E7B2CE311BB8ECFDCEC /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				8BC4D446493E4A919D08E5A9 /* AppLanguage.swift */,
+				A2A8EDEEBF1B4E988FDD47D0 /* SettingsView.swift */,
+				1B2E09C55A9745D9853449E1 /* HotkeysSettingsPane.swift */,
+				8A05C08CB2FC41479AC43E22 /* MonochromeComponents.swift */,
 				6691FBECAED7C1415C87D00E /* PostProcessingSettingsModel.swift */,
 				C12C6F1C14AA326395B95778 /* PostProcessingSettingsSection.swift */,
 				0178E3308878A0B2C2CE2D95 /* STTSettingsModel.swift */,
 				0E8A074180E7642DDF3FD07F /* STTSettingsSection.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		C224FC31FFD0485088E09829 /* Hotkeys */ = {
+			isa = PBXGroup;
+			children = (
+				FB5DB69C9FFB448C8C975B88 /* HotKeyConfiguration.swift */,
+				A7C74B357AAC4EC9AAEA28BB /* HotKeyManager.swift */,
+			);
+			path = Hotkeys;
 			sourceTree = "<group>";
 		};
 		605C1EA84C782B8477C543AE /* AIVoiceKeyboardTests */ = {
@@ -236,6 +261,7 @@
 				BB098512DE92809BDFE721E3 /* AIVoiceKeyboardApp.swift */,
 					990332E78C912D3698638D6F /* AppDelegate.swift */,
 					9A5C4185E01E21830F68E482 /* GlobalHotKeyCenter.swift */,
+					C224FC31FFD0485088E09829 /* Hotkeys */,
 					2DD65E212905B6BB33840145 /* Info.plist */,
 					1BD4E6B2D31AD240B12A26AC /* Localizable.strings */,
 					DC2AD42EB31C03A5BBD7F4D9 /* HUD */,
@@ -380,6 +406,12 @@
 				2266933E00516AD2B0AB3509 /* AppDelegate.swift in Sources */,
 				AC7C4BCDEA414C6D20CFA9C2 /* AppleSpeechSTTEngine.swift in Sources */,
 				F08844A277CBAF431AF554B0 /* GlobalHotKeyCenter.swift in Sources */,
+				B7B19DE0E4344122BBB67DA3 /* HotKeyConfiguration.swift in Sources */,
+				B595E0472BA04D00A9617DAD /* HotKeyManager.swift in Sources */,
+				3EA9676312664F658A648218 /* AppLanguage.swift in Sources */,
+				9F26C0F877224022B6FD8B75 /* SettingsView.swift in Sources */,
+				6C39E925AA7B454384BD69EF /* HotkeysSettingsPane.swift in Sources */,
+				DCF8076F7E7C4FCF881F69D8 /* MonochromeComponents.swift in Sources */,
 				1FF5B48B7C83D13F18CA9776 /* KeychainManager.swift in Sources */,
 				13D1CD53938051021D06AEDE /* LLMAPIClient.swift in Sources */,
 				DFE7AE8F42AC505C7E09A6F7 /* LLMAPIClientFactory.swift in Sources */,

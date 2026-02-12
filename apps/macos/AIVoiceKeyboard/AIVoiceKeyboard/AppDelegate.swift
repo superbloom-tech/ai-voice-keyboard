@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private let appState = AppState()
   private let hotKeyCenter = GlobalHotKeyCenter()
+  private lazy var hotKeyManager = HotKeyManager(center: hotKeyCenter)
   private var recordingHUD: RecordingHUDController?
 
   private let historyStore: HistoryStore
@@ -62,7 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private let activationPolicyController = ActivationPolicyController()
   private lazy var settingsWindowController = SettingsWindowController(
-    activationPolicyController: activationPolicyController
+    activationPolicyController: activationPolicyController,
+    hotKeyManager: hotKeyManager
   )
   private lazy var permissionsGuideWindowController = PermissionsGuideWindowController(
     activationPolicyController: activationPolicyController
@@ -97,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Hotkey info + warning section.
     let hotKeyInfo = NSMenuItem(
-      title: "Hotkeys: ⌥Space (Insert), ⌥⇧Space (Edit)",
+      title: NSLocalizedString("menu.hotkeys.info_loading", comment: ""),
       action: nil,
       keyEquivalent: ""
     )
@@ -106,7 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     self.hotKeyInfoMenuItem = hotKeyInfo
 
     let hotKeyError = NSMenuItem(
-      title: "Hotkeys error: -",
+      title: String(format: NSLocalizedString("menu.hotkeys.error_format", comment: ""), "-"),
       action: nil,
       keyEquivalent: ""
     )
@@ -218,10 +220,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     do {
-      try hotKeyCenter.registerDefaultHotKeys()
+      try hotKeyManager.start()
     } catch {
       appState.hotKeyErrorMessage = error.localizedDescription
     }
+
+    // Keep the menu item in sync when hotkeys are updated from Settings.
+    hotKeyManager.$configuration
+      .sink { [weak self] _ in
+        guard let self else { return }
+        guard self.appState.hotKeyErrorMessage == nil else { return }
+        self.updateHotKeyInfoMenuItem()
+      }
+      .store(in: &cancellables)
 
     // Observe state changes.
     appState.$status
@@ -237,12 +248,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       .sink { [weak self] message in
         guard let self else { return }
         if let message {
-          self.hotKeyErrorMenuItem?.title = "Hotkeys error: \(message)"
+          self.hotKeyErrorMenuItem?.title = String(
+            format: NSLocalizedString("menu.hotkeys.error_format", comment: ""),
+            message
+          )
           self.hotKeyErrorMenuItem?.isHidden = false
-          self.hotKeyInfoMenuItem?.title = "Hotkeys: disabled (see error below)"
+          self.hotKeyInfoMenuItem?.title = NSLocalizedString("menu.hotkeys.info_disabled", comment: "")
         } else {
           self.hotKeyErrorMenuItem?.isHidden = true
-          self.hotKeyInfoMenuItem?.title = "Hotkeys: ⌥Space (Insert), ⌥⇧Space (Edit)"
+          self.updateHotKeyInfoMenuItem()
         }
       }
       .store(in: &cancellables)
@@ -716,6 +730,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   // MARK: - UI
 
+  private func updateHotKeyInfoMenuItem() {
+    let insert = hotKeyManager.displayString(for: .toggleInsert)
+    let edit = hotKeyManager.displayString(for: .toggleEdit)
+    hotKeyInfoMenuItem?.title = String(
+      format: NSLocalizedString("menu.hotkeys.info_format", comment: ""),
+      insert,
+      edit
+    )
+  }
+
   private func updateStatusItemIcon(for status: AppState.Status) {
     guard let button = statusItem?.button else { return }
 
@@ -774,9 +798,11 @@ extension AppState.Status {
 final class SettingsWindowController {
   private var window: NSWindow?
   private let activationPolicyController: ActivationPolicyController
+  private let hotKeyManager: HotKeyManager
 
-  init(activationPolicyController: ActivationPolicyController) {
+  init(activationPolicyController: ActivationPolicyController, hotKeyManager: HotKeyManager) {
     self.activationPolicyController = activationPolicyController
+    self.hotKeyManager = hotKeyManager
   }
 
   func show() {
@@ -792,12 +818,17 @@ final class SettingsWindowController {
     NSApp.activate(ignoringOtherApps: true)
 
     // Create the settings window
-    let settingsView = SettingsView()
+    let settingsView = SettingsView(hotKeyManager: hotKeyManager)
     let hostingController = NSHostingController(rootView: settingsView)
 
     let window = NSWindow(contentViewController: hostingController)
     window.title = NSLocalizedString("settings.window_title", comment: "")
-    window.styleMask = [.titled, .closable]
+    window.styleMask = [.titled, .closable, .resizable]
+    // Issue #39: keep a reasonable default size while allowing the user to resize down on smaller screens.
+    window.setContentSize(NSSize(width: 680, height: 720))
+    // Use *content* min size. `minSize` includes the titlebar, which can cause the SwiftUI chrome
+    // (header/footer) to be clipped when the window is resized to the minimum.
+    window.contentMinSize = NSSize(width: 560, height: 520)
     window.center()
     window.isReleasedWhenClosed = false
 
