@@ -37,15 +37,18 @@ final class HotKeyManager: ObservableObject {
 
   func start() throws {
     do {
-      try register(configuration: configuration)
+      try center.register(configuration: configuration)
       activeConfiguration = configuration
     } catch {
+      let initialError = error
       // Best-effort fallback: default hotkeys.
       let fallback = HotKeyConfiguration.default
       do {
-        try register(configuration: fallback)
+        try center.register(configuration: fallback)
         activeConfiguration = fallback
         configuration = fallback
+        HotKeyConfigurationStore.save(fallback)
+        NSLog("[Hotkeys] Failed to register saved hotkey config; fell back to defaults. Error: %@", initialError.localizedDescription)
       } catch {
         // If even defaults can't be registered (conflict), leave hotkeys unregistered.
         throw error
@@ -63,13 +66,13 @@ final class HotKeyManager: ObservableObject {
     }
 
     do {
-      try register(configuration: newConfig)
+      try center.register(configuration: newConfig)
       activeConfiguration = newConfig
       configuration = newConfig
       HotKeyConfigurationStore.save(newConfig)
     } catch {
       // Keep old hotkeys active.
-      try? register(configuration: activeConfiguration)
+      try? center.register(configuration: activeConfiguration)
       throw HotKeyApplyError.registrationFailed(error.localizedDescription)
     }
   }
@@ -81,31 +84,6 @@ final class HotKeyManager: ObservableObject {
     case .toggleEdit:
       return configuration.edit.displayString
     }
-  }
-
-  // MARK: - Private
-
-  private func register(configuration: HotKeyConfiguration) throws {
-    // Keep ids stable so adding/reordering hotkeys won't silently change behavior.
-    enum HotKeyID {
-      static let insert: UInt32 = 1
-      static let edit: UInt32 = 2
-    }
-
-    try center.registerHotKeys([
-      GlobalHotKeyCenter.Binding(
-        id: HotKeyID.insert,
-        keyCode: configuration.insert.keyCode,
-        modifiers: configuration.insert.modifiers,
-        action: .toggleInsert
-      ),
-      GlobalHotKeyCenter.Binding(
-        id: HotKeyID.edit,
-        keyCode: configuration.edit.keyCode,
-        modifiers: configuration.edit.modifiers,
-        action: .toggleEdit
-      ),
-    ])
   }
 }
 

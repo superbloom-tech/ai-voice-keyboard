@@ -69,7 +69,7 @@ struct PostProcessingSettingsSection: View {
 
       Divider()
 
-      let isEnabled = model.config.enabled
+      let postProcessingEnabled = model.config.enabled
       // When post-processing is disabled, keep advanced settings visible but non-interactive
       // (and visually de-emphasized) to avoid confusing "editable but inactive" states.
       Group {
@@ -213,11 +213,11 @@ struct PostProcessingSettingsSection: View {
         }
 
         Text("settings.post_processing.privacy_hint")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+        .font(.footnote)
+        .foregroundStyle(.secondary)
       }
-      .disabled(!isEnabled)
-      .opacity(isEnabled ? 1.0 : 0.45)
+      .disabled(!postProcessingEnabled)
+      .opacity(postProcessingEnabled ? 1.0 : 0.45)
     }
   }
 }

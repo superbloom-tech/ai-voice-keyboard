@@ -49,20 +49,31 @@ final class GlobalHotKeyCenter {
   /// Called on the MainActor when a hotkey fires.
   var onAction: (@MainActor (Action) -> Void)?
 
-  func registerDefaultHotKeys() throws {
+  func register(configuration: HotKeyConfiguration) throws {
     // Keep ids stable so adding/reordering hotkeys won't silently change behavior.
     enum HotKeyID {
       static let insert: UInt32 = 1
       static let edit: UInt32 = 2
     }
 
-    // Default bindings:
-    // - Insert: Option+Space
-    // - Edit: Option+Shift+Space
     try registerHotKeys([
-      Binding(id: HotKeyID.insert, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey), action: .toggleInsert),
-      Binding(id: HotKeyID.edit, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey | shiftKey), action: .toggleEdit),
+      Binding(
+        id: HotKeyID.insert,
+        keyCode: configuration.insert.keyCode,
+        modifiers: configuration.insert.modifiers,
+        action: .toggleInsert
+      ),
+      Binding(
+        id: HotKeyID.edit,
+        keyCode: configuration.edit.keyCode,
+        modifiers: configuration.edit.modifiers,
+        action: .toggleEdit
+      ),
     ])
+  }
+
+  func registerDefaultHotKeys() throws {
+    try register(configuration: .default)
   }
 
   func unregisterAll() {
@@ -93,7 +104,7 @@ final class GlobalHotKeyCenter {
   private var actionByID: [UInt32: Action] = [:]
   private var registeredHotKeyRefs: [UInt32: EventHotKeyRef?] = [:]
 
-  func registerHotKeys(_ bindings: [Binding]) throws {
+  private func registerHotKeys(_ bindings: [Binding]) throws {
     // Ensure we don't leak multiple handlers/registrations across retries.
     unregisterAll()
 

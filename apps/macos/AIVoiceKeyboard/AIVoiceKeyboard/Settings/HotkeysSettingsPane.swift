@@ -151,6 +151,11 @@ private struct HotkeyRow: View {
           return
         }
 
+        if event.modifierFlags.contains(.function) {
+          captureHint = NSLocalizedString("settings.hotkeys.error.invalid.fn_not_supported", comment: "")
+          return
+        }
+
         let hk = HotKey(
           keyCode: UInt32(event.keyCode),
           modifiers: HotKey.modifiers(from: event.modifierFlags)
@@ -192,6 +197,12 @@ private struct HotKeyCaptureView: NSViewRepresentable {
       }
     }
   }
+
+  static func dismantleNSView(_ nsView: KeyCaptureNSView, coordinator: ()) {
+    // Prevent state updates from `resignFirstResponder` after the SwiftUI view is torn down.
+    nsView.onKeyDown = nil
+    nsView.onResign = nil
+  }
 }
 
 private final class KeyCaptureNSView: NSView {
@@ -210,4 +221,3 @@ private final class KeyCaptureNSView: NSView {
     return ok
   }
 }
-

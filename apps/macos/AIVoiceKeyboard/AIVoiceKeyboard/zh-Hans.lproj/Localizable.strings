@@ -85,6 +85,7 @@
 "settings.hotkeys.status.reset" = "已恢复默认。";
 "settings.hotkeys.error.invalid.shift_only" = "快捷键无效：不允许仅 Shift。";
 "settings.hotkeys.error.invalid.no_modifier" = "快捷键无效：请至少包含一个修饰键。";
+"settings.hotkeys.error.invalid.fn_not_supported" = "快捷键无效：不支持 Fn 修饰键。";
 "settings.hotkeys.error.conflict.insert_edit_same" = "快捷键冲突：Insert 与 Edit 不能相同。";
 
 "settings.section.stt" = "语音转文字（STT）";
