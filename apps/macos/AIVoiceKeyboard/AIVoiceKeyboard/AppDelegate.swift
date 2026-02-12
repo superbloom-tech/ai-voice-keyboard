@@ -824,6 +824,9 @@ final class SettingsWindowController {
     let window = NSWindow(contentViewController: hostingController)
     window.title = NSLocalizedString("settings.window_title", comment: "")
     window.styleMask = [.titled, .closable, .resizable]
+    // Issue #39: keep a reasonable default size while allowing the user to resize down on smaller screens.
+    window.setContentSize(NSSize(width: 680, height: 720))
+    window.minSize = NSSize(width: 560, height: 520)
     window.center()
     window.isReleasedWhenClosed = false
 

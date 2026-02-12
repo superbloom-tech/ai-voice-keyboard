@@ -80,7 +80,8 @@ struct SettingsView: View {
       Divider()
       footerBar
     }
-    .frame(width: 720, height: 760)
+    // Issue #39: Avoid a large fixed size; use a reasonable default with a smaller minimum.
+    .frame(minWidth: 560, idealWidth: 680, minHeight: 520, idealHeight: 720)
     .background(Color(nsColor: .windowBackgroundColor))
     .onAppear { permissions.refresh() }
     .alert("settings.history.alert_disable_title", isPresented: $showDisablePersistAlert) {
