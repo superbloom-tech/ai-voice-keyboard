@@ -51,10 +51,6 @@
 "permission.status.not_trusted" = "未信任";
 
 /* Settings */
-"settings.window_title" = "设置";
-"settings.app_title" = "AI 语音键盘";
-
-"settings.section.permissions" = "权限";
 "settings.nav.permissions" = "权限";
 "settings.nav.hotkeys" = "快捷键";
 "settings.nav.stt" = "STT";
@@ -87,11 +83,6 @@
 "settings.hotkeys.error.invalid.no_modifier" = "快捷键无效：请至少包含一个修饰键。";
 "settings.hotkeys.error.invalid.fn_not_supported" = "快捷键无效：不支持 Fn 修饰键。";
 "settings.hotkeys.error.conflict.insert_edit_same" = "快捷键冲突：Insert 与 Edit 不能相同。";
-
-"settings.section.stt" = "语音转文字（STT）";
-"settings.section.post_processing" = "后处理 / LLM";
-
-"settings.footer.prealpha_note" = "Pre-alpha：功能与设置仍在迭代中。";
 
 /* Language */
 "settings.language.section_title" = "语言";
