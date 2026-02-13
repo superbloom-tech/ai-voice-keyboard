@@ -9,8 +9,8 @@ struct HotkeysSettingsPane: View {
   @State private var messageIsError: Bool = false
 
   var body: some View {
-    Form {
-      Section("settings.section.hotkeys") {
+    PreferencesPane {
+      PreferencesGroupBox("settings.section.hotkeys") {
         HotkeyRow(
           action: .toggleInsert,
           labelKey: "settings.hotkeys.insert_label",
@@ -18,6 +18,8 @@ struct HotkeysSettingsPane: View {
           isRecording: binding(for: .toggleInsert),
           onCaptured: handleCapturedHotKey(_:for:)
         )
+
+        Divider()
 
         HotkeyRow(
           action: .toggleEdit,
@@ -28,16 +30,14 @@ struct HotkeysSettingsPane: View {
         )
       }
 
-      Section {
+      PreferencesGroupBox {
         Button("settings.hotkeys.action.reset_defaults") {
           applyResetToDefaults()
         }
       }
 
-      Section {
-        Text("settings.hotkeys.hint.modifier_requirement")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+      PreferencesGroupBox {
+        PreferencesFootnote("settings.hotkeys.hint.modifier_requirement")
 
         if let message, !message.isEmpty {
           Text(message)
@@ -108,30 +108,33 @@ private struct HotkeyRow: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      LabeledContent {
-        HStack(spacing: 10) {
-          TextField(
-            "",
-            text: .constant(isRecording
-              ? NSLocalizedString("settings.hotkeys.hint.press_keys", comment: "")
-              : current.displayString
-            )
-          )
-          .font(.system(.body, design: .monospaced))
-          .disabled(true)
+      HStack(spacing: 10) {
+        Text(labelKey)
+          .frame(width: 160, alignment: .leading)
 
-          if isRecording {
-            Button("settings.hotkeys.action.cancel") {
-              isRecording = false
-            }
-          } else {
-            Button("settings.hotkeys.action.change") {
-              isRecording = true
-            }
+        TextField(
+          "",
+          text: .constant(isRecording
+            ? NSLocalizedString("settings.hotkeys.hint.press_keys", comment: "")
+            : current.displayString
+          )
+        )
+        .font(.system(.body, design: .monospaced))
+        .textFieldStyle(.roundedBorder)
+        .disabled(true)
+        .frame(maxWidth: 320)
+
+        if isRecording {
+          Button("settings.hotkeys.action.cancel") {
+            isRecording = false
+          }
+        } else {
+          Button("settings.hotkeys.action.change") {
+            isRecording = true
           }
         }
-      } label: {
-        Text(labelKey)
+
+        Spacer(minLength: 0)
       }
 
       if let captureHint, !captureHint.isEmpty {

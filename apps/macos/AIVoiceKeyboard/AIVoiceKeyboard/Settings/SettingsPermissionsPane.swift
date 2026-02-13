@@ -4,9 +4,9 @@ struct SettingsPermissionsPane: View {
   @StateObject private var permissions = PermissionCenter()
 
   var body: some View {
-    Form {
-      Section {
-        HStack {
+    PreferencesPane {
+      PreferencesGroupBox {
+        HStack(spacing: 10) {
           Button("permissions_guide.settings_button") {
             NotificationCenter.default.post(name: .avkbShowPermissionsGuide, object: nil)
           }
@@ -19,7 +19,7 @@ struct SettingsPermissionsPane: View {
         }
       }
 
-      Section("permissions_guide.section.required") {
+      PreferencesGroupBox("permissions_guide.section.required") {
         SettingsPermissionRow(
           kind: .microphone,
           status: permissions.statuses[.microphone] ?? .unknown,
@@ -27,6 +27,8 @@ struct SettingsPermissionsPane: View {
           onOpenSystemSettings: { PermissionChecks.openSystemSettings(for: .microphone) },
           onRefresh: { permissions.refresh() }
         )
+
+        Divider()
 
         SettingsPermissionRow(
           kind: .speechRecognition,
@@ -36,12 +38,10 @@ struct SettingsPermissionsPane: View {
           onRefresh: { permissions.refresh() }
         )
 
-        Text("settings.permissions.tip_denied")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+        PreferencesFootnote("settings.permissions.tip_denied")
       }
 
-      Section("permissions_guide.section.auto_insert") {
+      PreferencesGroupBox("permissions_guide.section.auto_insert") {
         SettingsPermissionRow(
           kind: .accessibility,
           status: permissions.statuses[.accessibility] ?? .unknown,
@@ -50,9 +50,7 @@ struct SettingsPermissionsPane: View {
           onRefresh: { permissions.refresh() }
         )
 
-        Text("settings.permissions.tip_accessibility")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+        PreferencesFootnote("settings.permissions.tip_accessibility")
       }
     }
     .onAppear { permissions.refresh() }

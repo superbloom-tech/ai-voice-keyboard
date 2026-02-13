@@ -26,6 +26,7 @@
 		6C142D85C9F2DA0FA268695F /* VoiceKeyboardCore in Frameworks */ = {isa = PBXBuildFile; productRef = CEDF3561FC64F9D674DD1CEE /* VoiceKeyboardCore */; };
 		70C8A57AFB35085ADA597E78 /* TextCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 332B2285BAD174EB5D4D1D48 /* TextCleaner.swift */; };
 		75F6325B4F78629EEC22AA4A /* AnthropicClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DDE9293FE01BA6B7A26AE2C /* AnthropicClient.swift */; };
+		6FF3F48B75C435D252BCD2FA /* PreferencesPaneComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FF907683C778791567D340 /* PreferencesPaneComponents.swift */; };
 		983822AC57BADDFD24A7F251 /* LLMProviderFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C37D2AEE974BD99C49A1D6 /* LLMProviderFormat.swift */; };
 		9EF74535D947AF01E986F42F /* STTProviderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC6761C79980B380DE1010B /* STTProviderStore.swift */; };
 		9F7D49111009120C19DA770C /* LLMRefiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F64DDDB241E679A849EBC7 /* LLMRefiner.swift */; };
@@ -75,6 +76,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		06FF907683C778791567D340 /* PreferencesPaneComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesPaneComponents.swift; sourceTree = "<group>"; };
 		0178E3308878A0B2C2CE2D95 /* STTSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTSettingsModel.swift; sourceTree = "<group>"; };
 		0D9993535E9822B4EE23C47E /* LLMEndpointTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEndpointTests.swift; sourceTree = "<group>"; };
 		0E8A074180E7642DDF3FD07F /* STTSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTSettingsSection.swift; sourceTree = "<group>"; };
@@ -215,6 +217,7 @@
 			children = (
 				8BC4D446493E4A919D08E5A9 /* AppLanguage.swift */,
 				F8ED2DC9546243F5B47ECE34 /* PreferencesTabViewController.swift */,
+				06FF907683C778791567D340 /* PreferencesPaneComponents.swift */,
 				D1F30740D19044F192451800 /* SettingsPermissionsPane.swift */,
 				1B2E09C55A9745D9853449E1 /* HotkeysSettingsPane.swift */,
 				98421D73268A43768B49B1DD /* SettingsSTTPane.swift */,
@@ -425,6 +428,7 @@
 				B595E0472BA04D00A9617DAD /* HotKeyManager.swift in Sources */,
 				3EA9676312664F658A648218 /* AppLanguage.swift in Sources */,
 				6A4FAED4E8714200AEAFF2A6 /* PreferencesTabViewController.swift in Sources */,
+				6FF3F48B75C435D252BCD2FA /* PreferencesPaneComponents.swift in Sources */,
 				2A996C51364D4C2192757FD8 /* SettingsPermissionsPane.swift in Sources */,
 				6C39E925AA7B454384BD69EF /* HotkeysSettingsPane.swift in Sources */,
 				6C9599594A87495FB7DD9AEC /* SettingsSTTPane.swift in Sources */,

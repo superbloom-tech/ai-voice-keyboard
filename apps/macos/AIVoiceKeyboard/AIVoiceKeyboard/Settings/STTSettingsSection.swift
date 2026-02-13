@@ -12,70 +12,83 @@ struct STTSettingsSection: View {
   }()
 
   var body: some View {
-    Form {
-      Section {
+    PreferencesPane {
+      PreferencesGroupBox("settings.stt.provider_label") {
         Picker("settings.stt.provider_label", selection: $model.selectedProvider) {
           ForEach(STTProviderKind.allCases) { kind in
             Text(kind.displayName).tag(kind)
           }
         }
+        .pickerStyle(.menu)
       }
 
       switch model.selectedProvider {
       case .appleSpeech:
-        Section(header: Text(model.selectedProvider.displayName)) {
+        PreferencesGroupBox("stt_provider.apple_speech") {
           TextField("settings.stt.apple_speech.locale_identifier_placeholder", text: $model.appleSpeechLocaleIdentifier)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
-          Text("settings.stt.apple_speech.permission_hint")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+          PreferencesFootnote("settings.stt.apple_speech.permission_hint")
         }
 
       case .whisperLocal:
-        Section(header: Text(model.selectedProvider.displayName)) {
+        PreferencesGroupBox("stt_provider.whisper_local") {
           TextField("settings.stt.whisper.executable_path_placeholder", text: $model.whisperExecutablePath)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
           TextField("settings.stt.whisper.model_placeholder", text: $model.whisperModel)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
           TextField("settings.stt.whisper.language_placeholder", text: $model.whisperLanguage)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
           LabeledContent("common.timeout_seconds") {
             TextField("", value: $model.whisperTimeoutSeconds, formatter: Self.secondsFormatter)
-              .frame(width: 72)
+              .textFieldStyle(.roundedBorder)
+              .frame(width: 96)
               .multilineTextAlignment(.trailing)
           }
 
-          Text("settings.stt.whisper.install_hint")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+          PreferencesFootnote("settings.stt.whisper.install_hint")
         }
 
       case .openAICompatible:
-        Section(header: Text(model.selectedProvider.displayName)) {
+        PreferencesGroupBox("stt_provider.openai_compatible") {
           LabeledContent("settings.stt.remote.base_url_placeholder") {
             HStack(spacing: 10) {
               TextField("", text: $model.remoteBaseURLString)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 360)
               Button("common.action.reset") { model.applyDefaultRemoteBaseURL() }
             }
           }
 
           TextField("settings.stt.remote.model_placeholder", text: $model.remoteModel)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
           LabeledContent("settings.stt.remote.api_key_id_placeholder") {
             HStack(spacing: 10) {
               TextField("", text: $model.remoteApiKeyId)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 240)
               Button("common.action.default") { model.remoteApiKeyId = "openai" }
             }
           }
 
           LabeledContent("common.timeout_seconds") {
             TextField("", value: $model.remoteTimeoutSeconds, formatter: Self.secondsFormatter)
-              .frame(width: 72)
+              .textFieldStyle(.roundedBorder)
+              .frame(width: 96)
               .multilineTextAlignment(.trailing)
           }
         }
 
-        Section("common.api_key_keychain_title") {
+        PreferencesGroupBox("common.api_key_keychain_title") {
           let statusKey = model.hasRemoteAPIKey ? "common.status.saved" : "common.status.not_saved"
           let statusLine = String(
             format: NSLocalizedString("settings.stt.remote.api_key.status_format", comment: ""),
@@ -89,8 +102,13 @@ struct STTSettingsSection: View {
 
           HStack(spacing: 10) {
             SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
-            Button("common.action.save") { model.saveAPIKey() }
-            Button("common.action.delete") { model.deleteAPIKey() }
+              .textFieldStyle(.roundedBorder)
+              .frame(maxWidth: 360)
+
+            ControlGroup {
+              Button("common.action.save") { model.saveAPIKey() }
+              Button("common.action.delete") { model.deleteAPIKey() }
+            }
           }
 
           if let message = model.apiKeyMessage, !message.isEmpty {
@@ -99,37 +117,42 @@ struct STTSettingsSection: View {
               .foregroundStyle(model.apiKeyMessageIsError ? .red : .secondary)
           }
 
-          Text("settings.stt.remote.privacy_hint")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+          PreferencesFootnote("settings.stt.remote.privacy_hint")
         }
 
       case .elevenLabsREST:
-        Section(header: Text(model.selectedProvider.displayName)) {
+        PreferencesGroupBox("stt_provider.elevenlabs_rest") {
           LabeledContent("settings.stt.remote.base_url_placeholder") {
             HStack(spacing: 10) {
               TextField("", text: $model.elevenLabsBaseURLString)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 360)
               Button("common.action.reset") { model.applyDefaultElevenLabsBaseURL() }
             }
           }
 
           TextField("settings.stt.remote.model_placeholder", text: $model.elevenLabsModel)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
           LabeledContent("settings.stt.remote.api_key_id_placeholder") {
             HStack(spacing: 10) {
               TextField("", text: $model.elevenLabsApiKeyId)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 240)
               Button("common.action.default") { model.elevenLabsApiKeyId = "elevenlabs" }
             }
           }
 
           LabeledContent("common.timeout_seconds") {
             TextField("", value: $model.elevenLabsTimeoutSeconds, formatter: Self.secondsFormatter)
-              .frame(width: 72)
+              .textFieldStyle(.roundedBorder)
+              .frame(width: 96)
               .multilineTextAlignment(.trailing)
           }
         }
 
-        Section("common.api_key_keychain_title") {
+        PreferencesGroupBox("common.api_key_keychain_title") {
           let statusKey = model.hasElevenLabsAPIKey ? "common.status.saved" : "common.status.not_saved"
           let statusLine = String(
             format: NSLocalizedString("settings.stt.remote.api_key.status_format", comment: ""),
@@ -143,8 +166,13 @@ struct STTSettingsSection: View {
 
           HStack(spacing: 10) {
             SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
-            Button("common.action.save") { model.saveAPIKey() }
-            Button("common.action.delete") { model.deleteAPIKey() }
+              .textFieldStyle(.roundedBorder)
+              .frame(maxWidth: 360)
+
+            ControlGroup {
+              Button("common.action.save") { model.saveAPIKey() }
+              Button("common.action.delete") { model.deleteAPIKey() }
+            }
           }
 
           if let message = model.apiKeyMessage, !message.isEmpty {
@@ -153,14 +181,12 @@ struct STTSettingsSection: View {
               .foregroundStyle(model.apiKeyMessageIsError ? .red : .secondary)
           }
 
-          Text("settings.stt.remote.privacy_hint")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+          PreferencesFootnote("settings.stt.remote.privacy_hint")
         }
       }
 
       if let message = model.configMessage, !message.isEmpty {
-        Section {
+        PreferencesGroupBox {
           Text(message)
             .font(.footnote)
             .foregroundStyle(model.configMessageIsError ? .red : .secondary)

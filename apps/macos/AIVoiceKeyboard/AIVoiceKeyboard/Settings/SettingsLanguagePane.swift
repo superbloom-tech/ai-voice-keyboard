@@ -21,18 +21,17 @@ struct SettingsLanguagePane: View {
   }
 
   var body: some View {
-    Form {
-      Section("settings.language.section_title") {
+    PreferencesPane {
+      PreferencesGroupBox("settings.language.section_title") {
         Picker("settings.language.picker_label", selection: languageBinding) {
           Text("settings.language.option.system").tag(AppLanguage.system)
           Text("settings.language.option.en").tag(AppLanguage.en)
           Text("settings.language.option.zh_hans").tag(AppLanguage.zhHans)
           Text("settings.language.option.zh_hant").tag(AppLanguage.zhHant)
         }
+        .pickerStyle(.menu)
 
-        Text("settings.language.restart_hint")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+        PreferencesFootnote("settings.language.restart_hint")
       }
     }
     .alert("settings.language.restart_title", isPresented: $showRestartAlert) {
@@ -43,4 +42,3 @@ struct SettingsLanguagePane: View {
     }
   }
 }
-

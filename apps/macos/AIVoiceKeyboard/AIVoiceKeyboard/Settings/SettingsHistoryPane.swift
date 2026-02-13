@@ -20,13 +20,11 @@ struct SettingsHistoryPane: View {
   }
 
   var body: some View {
-    Form {
-      Section("settings.section.history") {
+    PreferencesPane {
+      PreferencesGroupBox("settings.section.history") {
         Toggle("settings.history.persist_toggle", isOn: persistHistoryBinding)
 
-        Text("settings.history.persist_desc")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+        PreferencesFootnote("settings.history.persist_desc")
       }
     }
     .alert("settings.history.alert_disable_title", isPresented: $showDisablePersistAlert) {
@@ -43,4 +41,3 @@ struct SettingsHistoryPane: View {
     }
   }
 }
-
