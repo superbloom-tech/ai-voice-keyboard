@@ -820,7 +820,9 @@ final class SettingsWindowController {
     // Create the settings window (native macOS preferences-style toolbar tabs).
     let preferencesController = PreferencesTabViewController(hotKeyManager: hotKeyManager)
     let window = NSWindow(contentViewController: preferencesController)
-    window.title = NSLocalizedString("settings.window_title", comment: "")
+    // Title is managed by `PreferencesTabViewController` (updated on tab selection).
+    // Set an initial title to match the default selected tab (avoids a brief "Settings" flash).
+    window.title = NSLocalizedString("settings.nav.permissions", comment: "")
     window.styleMask = [.titled, .closable, .resizable]
     if #available(macOS 13.0, *) {
       window.toolbarStyle = .preference

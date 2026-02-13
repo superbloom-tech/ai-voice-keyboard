@@ -65,7 +65,7 @@ struct PostProcessingSettingsSection: View {
 
   var body: some View {
     PreferencesPane {
-      PreferencesGroupBox("settings.post_processing.enabled_toggle") {
+      PreferencesGroupBox {
         Toggle("settings.post_processing.enabled_toggle", isOn: $model.config.enabled)
       }
 

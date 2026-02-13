@@ -61,7 +61,7 @@ final class PreferencesTabViewController: NSTabViewController {
 
     let item = NSTabViewItem(viewController: viewController)
     item.label = title
-    item.image = NSImage(systemSymbolName: systemImageName, accessibilityDescription: nil)
+    item.image = NSImage(systemSymbolName: systemImageName, accessibilityDescription: title)
     return item
   }
 

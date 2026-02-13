@@ -19,6 +19,8 @@ struct STTSettingsSection: View {
             Text(kind.displayName).tag(kind)
           }
         }
+        .labelsHidden()
+        .accessibilityLabel(Text("settings.stt.provider_label"))
         .pickerStyle(.menu)
       }
 
