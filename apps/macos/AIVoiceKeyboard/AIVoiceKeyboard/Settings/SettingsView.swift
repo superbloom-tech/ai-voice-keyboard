@@ -2,8 +2,6 @@ import AppKit
 import SwiftUI
 
 /// Root settings view shown by `SettingsWindowController`.
-///
-/// UI goal (Issue #64): grouped navigation at the top + a clean monochrome layout.
 struct SettingsView: View {
   enum Pane: String, CaseIterable, Identifiable {
     case permissions
@@ -15,7 +13,7 @@ struct SettingsView: View {
 
     var id: String { rawValue }
 
-    var segmentTitleKey: LocalizedStringKey {
+    var titleKey: LocalizedStringKey {
       switch self {
       case .permissions: return "settings.nav.permissions"
       case .hotkeys: return "settings.nav.hotkeys"
@@ -23,6 +21,17 @@ struct SettingsView: View {
       case .postProcessing: return "settings.nav.post_processing"
       case .history: return "settings.nav.history"
       case .language: return "settings.nav.language"
+      }
+    }
+
+    var systemImageName: String {
+      switch self {
+      case .permissions: return "lock"
+      case .hotkeys: return "keyboard"
+      case .stt: return "waveform"
+      case .postProcessing: return "sparkles"
+      case .history: return "clock.arrow.circlepath"
+      case .language: return "globe"
       }
     }
   }
@@ -73,16 +82,34 @@ struct SettingsView: View {
   }
 
   var body: some View {
-    VStack(spacing: 0) {
-      headerBar
-      Divider()
-      content
-      Divider()
-      footerBar
+    TabView(selection: $selectedPane) {
+      permissionsTab
+        .tabItem { Label(Pane.permissions.titleKey, systemImage: Pane.permissions.systemImageName) }
+        .tag(Pane.permissions)
+
+      hotkeysTab
+        .tabItem { Label(Pane.hotkeys.titleKey, systemImage: Pane.hotkeys.systemImageName) }
+        .tag(Pane.hotkeys)
+
+      sttTab
+        .tabItem { Label(Pane.stt.titleKey, systemImage: Pane.stt.systemImageName) }
+        .tag(Pane.stt)
+
+      postProcessingTab
+        .tabItem { Label(Pane.postProcessing.titleKey, systemImage: Pane.postProcessing.systemImageName) }
+        .tag(Pane.postProcessing)
+
+      historyTab
+        .tabItem { Label(Pane.history.titleKey, systemImage: Pane.history.systemImageName) }
+        .tag(Pane.history)
+
+      languageTab
+        .tabItem { Label(Pane.language.titleKey, systemImage: Pane.language.systemImageName) }
+        .tag(Pane.language)
     }
     // Issue #39: Avoid a large fixed size; use a reasonable default with a smaller minimum.
     .frame(minWidth: 560, idealWidth: 680, minHeight: 520, idealHeight: 720)
-    .background(Color(nsColor: .windowBackgroundColor))
+    .padding(12)
     .onAppear { permissions.refresh() }
     .alert("settings.history.alert_disable_title", isPresented: $showDisablePersistAlert) {
       Button("common.action.cancel", role: .cancel) {}
@@ -104,67 +131,38 @@ struct SettingsView: View {
     }
   }
 
-  // MARK: - Chrome
+  // MARK: - Tabs
 
-  private var headerBar: some View {
-    VStack(spacing: 10) {
-      HStack {
-        Text("settings.app_title")
-          .font(.system(size: 18, weight: .semibold))
-          .foregroundStyle(Color(nsColor: .labelColor))
-        Spacer()
-      }
-
-      Picker("", selection: $selectedPane) {
-        ForEach(Pane.allCases) { pane in
-          Text(pane.segmentTitleKey).tag(pane)
-        }
-      }
-      .pickerStyle(.segmented)
-    }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 14)
-    .background(Color(nsColor: .controlBackgroundColor))
+  private var permissionsTab: some View {
+    ScrollView { permissionsPane }
   }
 
-  private var footerBar: some View {
-    HStack {
-      Text("settings.footer.prealpha_note")
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-      Spacer()
-    }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 10)
-    .background(Color(nsColor: .controlBackgroundColor))
+  private var hotkeysTab: some View {
+    ScrollView { HotkeysSettingsPane(manager: hotKeyManager) }
   }
 
-  // MARK: - Content
-
-  private var content: some View {
+  private var sttTab: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 14) {
-        switch selectedPane {
-        case .permissions:
-          permissionsPane
-        case .hotkeys:
-          HotkeysSettingsPane(manager: hotKeyManager)
-        case .stt:
-          SettingsCard(titleKey: "settings.section.stt") {
-            STTSettingsSection(model: sttSettings)
-          }
-        case .postProcessing:
-          SettingsCard(titleKey: "settings.section.post_processing") {
-            PostProcessingSettingsSection(model: postProcessingSettings)
-          }
-        case .history:
-          historyPane
-        case .language:
-          languagePane
-        }
+      SettingsCard(titleKey: "settings.section.stt") {
+        STTSettingsSection(model: sttSettings)
       }
-      .padding(16)
     }
+  }
+
+  private var postProcessingTab: some View {
+    ScrollView {
+      SettingsCard(titleKey: "settings.section.post_processing") {
+        PostProcessingSettingsSection(model: postProcessingSettings)
+      }
+    }
+  }
+
+  private var historyTab: some View {
+    ScrollView { historyPane }
+  }
+
+  private var languageTab: some View {
+    ScrollView { languagePane }
   }
 
   private var permissionsPane: some View {
