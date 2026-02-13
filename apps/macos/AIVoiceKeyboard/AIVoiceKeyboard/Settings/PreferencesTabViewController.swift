@@ -24,7 +24,9 @@ final class PreferencesTabViewController: NSTabViewController {
 
     tabStyle = .toolbar
 
-    tabViewItems = [
+    // NOTE(macOS 15.7): Setting `tabViewItems = [...]` crashes due to an AppKit bug
+    // (`NSTabViewControllerToolbarUIProvider` missing selector). Incremental adds work.
+    let items: [NSTabViewItem] = [
       makeTabItem(rootView: SettingsPermissionsPane(), titleKey: "settings.nav.permissions", systemImageName: "lock"),
       makeTabItem(rootView: HotkeysSettingsPane(manager: hotKeyManager), titleKey: "settings.nav.hotkeys", systemImageName: "keyboard"),
       makeTabItem(rootView: SettingsSTTPane(), titleKey: "settings.nav.stt", systemImageName: "waveform"),
@@ -32,6 +34,9 @@ final class PreferencesTabViewController: NSTabViewController {
       makeTabItem(rootView: SettingsHistoryPane(), titleKey: "settings.nav.history", systemImageName: "clock.arrow.circlepath"),
       makeTabItem(rootView: SettingsLanguagePane(), titleKey: "settings.nav.language", systemImageName: "globe"),
     ]
+    for item in items {
+      addTabViewItem(item)
+    }
     selectedTabViewItemIndex = 0
   }
 
