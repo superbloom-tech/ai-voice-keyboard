@@ -51,10 +51,6 @@
 "permission.status.not_trusted" = "Not Trusted";
 
 /* Settings */
-"settings.window_title" = "Settings";
-"settings.app_title" = "AI Voice Keyboard";
-
-"settings.section.permissions" = "Permissions";
 "settings.nav.permissions" = "Permissions";
 "settings.nav.hotkeys" = "Hotkeys";
 "settings.nav.stt" = "STT";
@@ -87,11 +83,6 @@
 "settings.hotkeys.error.invalid.no_modifier" = "Invalid shortcut: include at least one modifier key.";
 "settings.hotkeys.error.invalid.fn_not_supported" = "Fn modifier is not supported for global hotkeys.";
 "settings.hotkeys.error.conflict.insert_edit_same" = "Conflict: Insert and Edit shortcuts cannot be the same.";
-
-"settings.section.stt" = "Speech-to-text (STT)";
-"settings.section.post_processing" = "Post-processing / LLM";
-
-"settings.footer.prealpha_note" = "Pre-alpha: settings and providers may change.";
 
 /* Language */
 "settings.language.section_title" = "Language";

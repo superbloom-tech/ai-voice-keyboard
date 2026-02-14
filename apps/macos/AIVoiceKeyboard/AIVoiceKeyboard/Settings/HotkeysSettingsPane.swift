@@ -9,8 +9,8 @@ struct HotkeysSettingsPane: View {
   @State private var messageIsError: Bool = false
 
   var body: some View {
-    SettingsCard(titleKey: "settings.section.hotkeys") {
-      VStack(alignment: .leading, spacing: 12) {
+    PreferencesPane {
+      PreferencesGroupBox("settings.section.hotkeys") {
         HotkeyRow(
           action: .toggleInsert,
           labelKey: "settings.hotkeys.insert_label",
@@ -19,6 +19,8 @@ struct HotkeysSettingsPane: View {
           onCaptured: handleCapturedHotKey(_:for:)
         )
 
+        Divider()
+
         HotkeyRow(
           action: .toggleEdit,
           labelKey: "settings.hotkeys.edit_label",
@@ -26,23 +28,21 @@ struct HotkeysSettingsPane: View {
           isRecording: binding(for: .toggleEdit),
           onCaptured: handleCapturedHotKey(_:for:)
         )
+      }
 
-        HStack(spacing: 10) {
-          MonochromeButton("settings.hotkeys.action.reset_defaults") {
-            applyResetToDefaults()
-          }
-          Spacer()
+      PreferencesGroupBox {
+        Button("settings.hotkeys.action.reset_defaults") {
+          applyResetToDefaults()
         }
+      }
 
-        Text("settings.hotkeys.hint.modifier_requirement")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+      PreferencesGroupBox {
+        PreferencesFootnote("settings.hotkeys.hint.modifier_requirement")
 
         if let message, !message.isEmpty {
           Text(message)
             .font(.footnote)
             .foregroundStyle(messageIsError ? .red : .secondary)
-            .padding(.top, 2)
         }
       }
     }
@@ -107,33 +107,34 @@ private struct HotkeyRow: View {
   @State private var captureHint: String?
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack(spacing: 12) {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 10) {
         Text(labelKey)
-          .frame(width: 120, alignment: .leading)
+          .frame(width: 160, alignment: .leading)
 
-        Text(isRecording ? NSLocalizedString("settings.hotkeys.hint.press_keys", comment: "") : current.displayString)
-          .font(.system(.body, design: .monospaced))
-          .foregroundStyle(isRecording ? .secondary : Color(nsColor: .labelColor))
-          .padding(.vertical, 6)
-          .padding(.horizontal, 10)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .background(Color(nsColor: .textBackgroundColor).opacity(isRecording ? 0.6 : 0.35))
-          .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-              .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        TextField(
+          "",
+          text: .constant(isRecording
+            ? NSLocalizedString("settings.hotkeys.hint.press_keys", comment: "")
+            : current.displayString
           )
-          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        )
+        .font(.system(.body, design: .monospaced))
+        .textFieldStyle(.roundedBorder)
+        .disabled(true)
+        .frame(maxWidth: 320)
 
         if isRecording {
-          MonochromeButton("settings.hotkeys.action.cancel") {
+          Button("settings.hotkeys.action.cancel") {
             isRecording = false
           }
         } else {
-          MonochromeButton("settings.hotkeys.action.change") {
+          Button("settings.hotkeys.action.change") {
             isRecording = true
           }
         }
+
+        Spacer(minLength: 0)
       }
 
       if let captureHint, !captureHint.isEmpty {

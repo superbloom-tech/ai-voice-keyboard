@@ -64,96 +64,97 @@ struct PostProcessingSettingsSection: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Toggle("settings.post_processing.enabled_toggle", isOn: $model.config.enabled)
-
-      Divider()
+    PreferencesPane {
+      PreferencesGroupBox {
+        Toggle("settings.post_processing.enabled_toggle", isOn: $model.config.enabled)
+      }
 
       let postProcessingEnabled = model.config.enabled
       // When post-processing is disabled, keep advanced settings visible but non-interactive
       // (and visually de-emphasized) to avoid confusing "editable but inactive" states.
       Group {
-        Text("settings.post_processing.cleaner.header")
-          .font(.headline)
+        PreferencesGroupBox("settings.post_processing.cleaner.header") {
+          Toggle("common.enabled", isOn: $model.config.cleanerEnabled)
 
-        Toggle("common.enabled", isOn: $model.config.cleanerEnabled)
+          Picker("settings.post_processing.cleaner.rules_preset", selection: $model.config.cleanerRulesRawValue) {
+            Text("settings.post_processing.cleaner.rules.basic").tag(TextCleaner.CleaningRules.basic.rawValue)
+            Text("settings.post_processing.cleaner.rules.standard").tag(TextCleaner.CleaningRules.standard.rawValue)
+            Text("settings.post_processing.cleaner.rules.aggressive").tag(TextCleaner.CleaningRules.aggressive.rawValue)
+          }
+          .pickerStyle(.menu)
 
-        Picker("settings.post_processing.cleaner.rules_preset", selection: $model.config.cleanerRulesRawValue) {
-          Text("settings.post_processing.cleaner.rules.basic").tag(TextCleaner.CleaningRules.basic.rawValue)
-          Text("settings.post_processing.cleaner.rules.standard").tag(TextCleaner.CleaningRules.standard.rawValue)
-          Text("settings.post_processing.cleaner.rules.aggressive").tag(TextCleaner.CleaningRules.aggressive.rawValue)
+          LabeledContent("common.timeout_seconds") {
+            TextField("", value: $model.config.cleanerTimeout, formatter: Self.secondsFormatter)
+              .textFieldStyle(.roundedBorder)
+              .frame(width: 96)
+              .multilineTextAlignment(.trailing)
+          }
         }
 
-        HStack {
-          Text("common.timeout_seconds")
-          Spacer()
-          TextField("", value: $model.config.cleanerTimeout, formatter: Self.secondsFormatter)
-            .frame(width: 72)
-            .multilineTextAlignment(.trailing)
-        }
+        PreferencesGroupBox("settings.post_processing.refiner.header") {
+          LabeledContent("settings.post_processing.refiner.profile_picker") {
+            HStack(spacing: 10) {
+              Picker("", selection: $model.config.selectedRefinerProfileId) {
+                ForEach(model.config.refinerProfiles, id: \.id) { profile in
+                  Text(profile.name).tag(profile.id)
+                }
+              }
+              .labelsHidden()
+              .pickerStyle(.menu)
+              .frame(maxWidth: 320)
 
-        Divider()
-
-        Text("settings.post_processing.refiner.header")
-          .font(.headline)
-
-        HStack(spacing: 12) {
-          Picker("settings.post_processing.refiner.profile_picker", selection: $model.config.selectedRefinerProfileId) {
-            ForEach(model.config.refinerProfiles, id: \.id) { profile in
-              Text(profile.name).tag(profile.id)
+              ControlGroup {
+                Button("common.action.add") { model.addProfile() }
+                Button("common.action.duplicate") { model.duplicateSelectedProfile() }
+                Button("common.action.delete") { model.deleteSelectedProfile() }
+                  .disabled(model.config.refinerProfiles.count <= 1)
+              }
             }
           }
 
-          .frame(maxWidth: 320)
+          TextField("settings.post_processing.refiner.profile_name_placeholder", text: profileNameBinding)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
 
-          Button("common.action.add") { model.addProfile() }
-          Button("common.action.duplicate") { model.duplicateSelectedProfile() }
-          Button("common.action.delete") { model.deleteSelectedProfile() }
-            .disabled(model.config.refinerProfiles.count <= 1)
+          Toggle("common.enabled", isOn: $model.config.refinerEnabled)
 
-          Spacer()
-        }
-
-        TextField("settings.post_processing.refiner.profile_name_placeholder", text: profileNameBinding)
-
-        Toggle("common.enabled", isOn: $model.config.refinerEnabled)
-
-        Picker("settings.post_processing.refiner.provider_format", selection: $model.config.refinerProviderFormat) {
-          ForEach(LLMProviderFormat.allCases, id: \.self) { format in
-            Text(format.displayName).tag(format)
-          }
-        }
-        .modifier(ProviderFormatChangeHandler(model: model))
-
-        if model.config.refinerProviderFormat == .openAICompatible {
-          Picker("settings.post_processing.refiner.preset", selection: $model.config.refinerOpenAICompatiblePreset) {
-            ForEach(OpenAICompatiblePreset.allCases, id: \.self) { preset in
-              Text(preset.displayName).tag(preset)
+          Picker("settings.post_processing.refiner.provider_format", selection: $model.config.refinerProviderFormat) {
+            ForEach(LLMProviderFormat.allCases, id: \.self) { format in
+              Text(format.displayName).tag(format)
             }
           }
-          .modifier(PresetChangeHandler(model: model))
+          .pickerStyle(.menu)
+          .modifier(ProviderFormatChangeHandler(model: model))
+
+          if model.config.refinerProviderFormat == .openAICompatible {
+            Picker("settings.post_processing.refiner.preset", selection: $model.config.refinerOpenAICompatiblePreset) {
+              ForEach(OpenAICompatiblePreset.allCases, id: \.self) { preset in
+                Text(preset.displayName).tag(preset)
+              }
+            }
+            .pickerStyle(.menu)
+            .modifier(PresetChangeHandler(model: model))
+          }
+
+          TextField("settings.post_processing.refiner.base_url_placeholder", text: $model.config.refinerBaseURL)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
+
+          PreferencesFootnote("settings.post_processing.refiner.endpoint_hint")
+
+          TextField("settings.post_processing.refiner.model_placeholder", text: refinerModelBinding)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 360)
+
+          LabeledContent("common.timeout_seconds") {
+            TextField("", value: $model.config.refinerTimeout, formatter: Self.secondsFormatter)
+              .textFieldStyle(.roundedBorder)
+              .frame(width: 96)
+              .multilineTextAlignment(.trailing)
+          }
         }
 
-        TextField("settings.post_processing.refiner.base_url_placeholder", text: $model.config.refinerBaseURL)
-
-        Text("settings.post_processing.refiner.endpoint_hint")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
-
-        TextField("settings.post_processing.refiner.model_placeholder", text: refinerModelBinding)
-
-        HStack {
-          Text("common.timeout_seconds")
-          Spacer()
-          TextField("", value: $model.config.refinerTimeout, formatter: Self.secondsFormatter)
-            .frame(width: 72)
-            .multilineTextAlignment(.trailing)
-        }
-
-        VStack(alignment: .leading, spacing: 8) {
-          Text("common.api_key_keychain_title")
-            .font(.headline)
-
+        PreferencesGroupBox("common.api_key_keychain_title") {
           let saved = model.config.hasLLMAPIKey()
           let statusKey = saved ? "common.status.saved" : "common.status.not_saved"
           let profileName = model.selectedProfile?.name ?? NSLocalizedString("common.value.unknown", comment: "")
@@ -162,14 +163,20 @@ struct PostProcessingSettingsSection: View {
             NSLocalizedString(statusKey, comment: ""),
             profileName
           )
+
           Text(statusLine)
             .font(.footnote)
             .foregroundStyle(saved ? .primary : .secondary)
 
-          HStack(spacing: 12) {
+          HStack(spacing: 10) {
             SecureField("common.api_key_enter_placeholder", text: $model.apiKeyDraft)
-            Button("common.action.save") { model.saveAPIKey() }
-            Button("common.action.delete") { model.deleteAPIKey() }
+              .textFieldStyle(.roundedBorder)
+              .frame(maxWidth: 360)
+
+            ControlGroup {
+              Button("common.action.save") { model.saveAPIKey() }
+              Button("common.action.delete") { model.deleteAPIKey() }
+            }
           }
 
           if let message = model.apiKeyMessage, !message.isEmpty {
@@ -179,42 +186,36 @@ struct PostProcessingSettingsSection: View {
           }
         }
 
-        Divider()
-
-        Text("settings.post_processing.fallback.header")
-          .font(.headline)
-
-        Picker("settings.post_processing.fallback.behavior_picker", selection: $model.config.fallbackBehaviorRawValue) {
-          Text("settings.post_processing.fallback.behavior.return_original").tag(0)
-          Text("settings.post_processing.fallback.behavior.return_last_valid").tag(1)
-          Text("settings.post_processing.fallback.behavior.throw_error").tag(2)
+        PreferencesGroupBox("settings.post_processing.fallback.header") {
+          Picker("settings.post_processing.fallback.behavior_picker", selection: $model.config.fallbackBehaviorRawValue) {
+            Text("settings.post_processing.fallback.behavior.return_original").tag(0)
+            Text("settings.post_processing.fallback.behavior.return_last_valid").tag(1)
+            Text("settings.post_processing.fallback.behavior.throw_error").tag(2)
+          }
+          .pickerStyle(.menu)
         }
 
-        Divider()
+        PreferencesGroupBox("common.action.test") {
+          HStack(spacing: 10) {
+            Button(model.isTesting ? LocalizedStringKey("common.status.testing") : LocalizedStringKey("common.action.test")) {
+              Task { await model.runTest() }
+            }
+            .disabled(model.isTesting)
 
-        HStack(spacing: 12) {
-          Button(model.isTesting ? LocalizedStringKey("common.status.testing") : LocalizedStringKey("common.action.test")) {
-            Task { await model.runTest() }
-          }
-          .disabled(model.isTesting)
-
-          if model.isTesting {
-            ProgressView()
-              .scaleEffect(0.7)
+            if model.isTesting {
+              ProgressView()
+                .scaleEffect(0.7)
+            }
           }
 
-          Spacer()
-        }
+          if let message = model.testMessage, !message.isEmpty {
+            Text(message)
+              .font(.footnote)
+              .foregroundStyle(model.testMessageIsError ? .red : .secondary)
+          }
 
-        if let message = model.testMessage, !message.isEmpty {
-          Text(message)
-            .font(.footnote)
-            .foregroundStyle(model.testMessageIsError ? .red : .secondary)
+          PreferencesFootnote("settings.post_processing.privacy_hint")
         }
-
-        Text("settings.post_processing.privacy_hint")
-        .font(.footnote)
-        .foregroundStyle(.secondary)
       }
       .disabled(!postProcessingEnabled)
       .opacity(postProcessingEnabled ? 1.0 : 0.45)

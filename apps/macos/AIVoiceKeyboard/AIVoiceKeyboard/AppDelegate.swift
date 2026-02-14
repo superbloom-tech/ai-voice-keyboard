@@ -817,13 +817,16 @@ final class SettingsWindowController {
     activationPolicyController.pushRegular()
     NSApp.activate(ignoringOtherApps: true)
 
-    // Create the settings window
-    let settingsView = SettingsView(hotKeyManager: hotKeyManager)
-    let hostingController = NSHostingController(rootView: settingsView)
-
-    let window = NSWindow(contentViewController: hostingController)
-    window.title = NSLocalizedString("settings.window_title", comment: "")
+    // Create the settings window (native macOS preferences-style toolbar tabs).
+    let preferencesController = PreferencesTabViewController(hotKeyManager: hotKeyManager)
+    let window = NSWindow(contentViewController: preferencesController)
+    // Title is managed by `PreferencesTabViewController` (updated on tab selection).
+    // Set an initial title to match the default selected tab (avoids a brief "Settings" flash).
+    window.title = NSLocalizedString("settings.nav.permissions", comment: "")
     window.styleMask = [.titled, .closable, .resizable]
+    if #available(macOS 13.0, *) {
+      window.toolbarStyle = .preference
+    }
     // Issue #39: keep a reasonable default size while allowing the user to resize down on smaller screens.
     window.setContentSize(NSSize(width: 680, height: 720))
     // Use *content* min size. `minSize` includes the titlebar, which can cause the SwiftUI chrome
