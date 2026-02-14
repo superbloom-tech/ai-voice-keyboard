@@ -23,7 +23,12 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
         INFOPLIST_FILE: AIVoiceKeyboard/Info.plist
-        CODE_SIGNING_ALLOWED: NO
+        # Ad-hoc sign by default so macOS can persist TCC (microphone/speech) + Keychain
+        # permissions for DMG builds. Can be overridden in release pipelines with a
+        # real Developer ID identity + notarization.
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
     dependencies:
       - package: VoiceKeyboardCore
   
