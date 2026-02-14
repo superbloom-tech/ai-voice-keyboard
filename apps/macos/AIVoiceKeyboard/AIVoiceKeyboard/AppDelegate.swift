@@ -797,6 +797,7 @@ extension AppState.Status {
 @MainActor
 final class SettingsWindowController {
   private var window: NSWindow?
+  private var windowDelegate: SettingsWindowDelegate?
   private let activationPolicyController: ActivationPolicyController
   private let hotKeyManager: HotKeyManager
 
@@ -836,12 +837,15 @@ final class SettingsWindowController {
     window.isReleasedWhenClosed = false
 
     // Restore activation policy when the window closes.
-    window.delegate = SettingsWindowDelegate(
+    let delegate = SettingsWindowDelegate(
       onClose: { [weak self] in
         self?.window = nil
+        self?.windowDelegate = nil
         self?.activationPolicyController.popRegular()
       }
     )
+    windowDelegate = delegate
+    window.delegate = delegate
 
     self.window = window
     window.makeKeyAndOrderFront(nil as Any?)
